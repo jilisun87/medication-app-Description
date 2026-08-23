@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1890FF" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="用药管理" />
+  <meta name="description" content="青岛市市立医院 患者用药管理 PWA" />
+  <title>患者用药管理 · 青岛市市立医院</title>
+
+  <!-- PWA 配置 -->
+  <link rel="manifest" href="manifest.json" />
+  <!-- 内嵌 SVG favicon，避免额外请求 -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%8A%3C/text%3E%3C/svg%3E" />
+
+  <style>
+    /* ============================================================
+     * 基础变量与重置
+     * ============================================================ */
+    :root {
+      --primary: #1890FF;
+      --primary-dark: #096DD9;
+      --primary-light: #E6F7FF;
+      --success: #52C41A;
+      --success-light: #F6FFED;
+      --warning: #FF6B6B;
+      --warning-light: #FFF1F0;
+      --bg: #F5F7FA;
+      --card-bg: #FFFFFF;
+      --text-primary: #262626;
+      --text-secondary: #595959;
+      --text-tertiary: #8C8C8C;
+      --text-disabled: #BFBFBF;
+      --border: #F0F0F0;
+      --divider: #F5F5F5;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-lg: 16px;
+      --tab-height: 56px;
+      --header-height: 56px;
+      --safe-bottom: env(safe-area-inset-bottom, 0);
+      --tap-highlight: rgba(24, 144, 255, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: var(--tap-highlight);
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+                   "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+                   "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      color: var(--text-primary);
+      background: var(--bg);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+    }
+
+    input, textarea, select {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+      border: none;
+      outline: none;
+      background: transparent;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    p { margin: 0; }
+
+    /* ============================================================
+     * 主应用容器
+     * ============================================================ */
+    #app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding-top: var(--header-height);
+      padding-bottom: calc(var(--tab-height) + var(--safe-bottom) + 8px);
+      position: relative;
+      background: var(--bg);
+    }
+
+    /* 顶部页面标题栏 */
+    .page-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      max-width: 480px;
+      margin: 0 auto;
+      height: var(--header-height);
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      z-index: 100;
+      padding-top: env(safe-area-inset-top, 0);
+      box-shadow: var(--shadow);
+    }
+
+    /* ============================================================
+     * 底部 Tab 导航
+     * ============================================================ */
+    #tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 480px;
+      margin: 0 auto;
+      height: calc(var(--tab-height) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--card-bg);
+      display: flex;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+      z-index: 100;
+    }
+
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      font-size: 22px;
+      color: var(--text-tertiary);
+      transition: color 0.2s;
+      padding: 6px 0;
+    }
+
+    .tab-item span {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .tab-item.active {
+      color: var(--primary);
+    }
+
+    /* ============================================================
+     * 页面通用样式
+     * ============================================================ */
+    .page {
+      padding: 16px;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ============================================================
+     * 首页 - 今日用药
+     * ============================================================ */
+    .date-bar {
+      background: linear-gradient(135deg, var(--primary), #40a9ff);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .date-bar .today-label {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+    .date-bar .today-date {
+      font-size: 22px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .date-bar .today-week {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .stat-item {
+      flex: 1;
+      background: rgba(255,255,255,0.18);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .stat-label {
+      font-size: 11px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    .med-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .med-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .med-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .med-meta {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .med-meta .time-tag {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .med-meta .dose-tag {
+      background: var(--divider);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .checkin-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--warning);
+      color: var(--warning);
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .checkin-btn:active { transform: scale(0.92); }
+
+    .checkin-btn.checked {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+    }
+
+    .checkin-btn .check-time {
+      font-size: 9px;
+      font-weight: 500;
+      margin-top: 2px;
+      line-height: 1;
+    }
+
+    /* 浮动按钮 - 添加药品 */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--tab-height) + var(--safe-bottom) + 16px);
+      right: 16px;
+      max-width: 480px;
+      width: calc(100% - 32px);
+      background: var(--primary);
+      color: #fff;
+      height: 48px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 15px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(24,144,255,0.4);
+      z-index: 50;
+    }
+    .fab:active { transform: scale(0.98); }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-tertiary);
+    }
+    .empty-state .emoji {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+    .empty-state .tip {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+    .empty-state .sub {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    /* ============================================================
+     * 日历页
+     * ============================================================ */
+    .cal-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+    .cal-toolbar .nav-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cal-toolbar .cal-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .cal-grid {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
+    }
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .cal-weekday {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      padding: 4px 0;
+    }
+    .cal-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.2s;
+      position: relative;
+    }
+    .cal-day:active { background: var(--primary-light); }
+    .cal-day.outside { opacity: 0.35; }
+    .cal-day.today {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .cal-day.selected {
+      background: var(--primary);
+      color: #fff;
+    }
+    .cal-day.selected .day-status { filter: brightness(1.3); }
+    .cal-day .day-num { font-size: 14px; line-height: 1; }
+    .cal-day .day-status {
+      font-size: 11px;
+      margin-top: 2px;
+      line-height: 1;
+    }
+
+    .day-detail {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .day-detail-title {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .med-mini {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--divider);
+    }
+    .med-mini:last-child { border-bottom: none; }
+    .med-mini .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .med-mini .dot.done { background: var(--success); }
+    .med-mini .dot.partial { background: #FAAD14; }
+    .med-mini .dot.missed { background: var(--text-disabled); }
+    .med-mini .info { flex: 1; min-width: 0; }
+    .med-mini .name { font-size: 14px; }
+    .med-mini .time-info { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+    .med-mini .check-mark { font-size: 18px; }
+
+    /* ============================================================
+     * 不良反应上报页
+     * ============================================================ */
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .symptom-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .symptom-chip {
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: var(--card-bg);
+      color: var(--text-secondary);
+      font-size: 13px;
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+    .symptom-chip.active {
+      background: var(--warning-light);
+      color: var(--warning);
+      border-color: var(--warning);
+    }
+
+    .severity-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .severity-item {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+    .severity-item.active {
+      background: var(--warning-light);
+      color: var(--warning);
+      border-color: var(--warning);
+      font-weight: 600;
+    }
+
+    .textarea {
+      width: 100%;
+      min-height: 90px;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      font-size: 14px;
+      resize: vertical;
+    }
+
+    .upload-box {
+      width: 100%;
+      padding: 24px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-sm);
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 13px;
+      margin-bottom: 16px;
+      background: var(--card-bg);
+    }
+    .upload-box.has-photo {
+      padding: 0;
+      border-style: solid;
+      overflow: hidden;
+    }
+    .upload-box img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+    .upload-box .remove-photo {
+      display: block;
+      width: 100%;
+      padding: 6px;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .primary-btn {
+      width: 100%;
+      height: 48px;
+      border-radius: 24px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(24,144,255,0.3);
+      transition: opacity 0.2s;
+    }
+    .primary-btn:active { opacity: 0.85; }
+    .primary-btn:disabled {
+      background: var(--text-disabled);
+      box-shadow: none;
+    }
+
+    .danger-btn {
+      background: var(--warning);
+      box-shadow: 0 4px 12px rgba(255,107,107,0.3);
+    }
+
+    .report-record {
+      padding: 12px;
+      background: var(--card-bg);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      border-left: 3px solid var(--warning);
+    }
+    .report-record .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .report-record .date { font-size: 12px; color: var(--text-tertiary); }
+    .report-record .severity-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--warning-light);
+      color: var(--warning);
+    }
+    .report-record .symptoms {
+      font-size: 13px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .report-record .desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* ============================================================
+     * 我的页
+     * ============================================================ */
+    .pharmacist-card {
+      background: linear-gradient(135deg, var(--primary), #40a9ff);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .pharmacist-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+    .pharmacist-info { flex: 1; min-width: 0; }
+    .pharmacist-info .name {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .pharmacist-info .dept {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-top: 2px;
+    }
+    .pharmacist-info .hospital {
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    .contact-btn {
+      width: 100%;
+      height: 44px;
+      background: rgba(255,255,255,0.95);
+      color: var(--primary);
+      border-radius: 22px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .menu-list {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--divider);
+      transition: background 0.15s;
+    }
+    .menu-item:active { background: var(--bg); }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-item .ico { font-size: 20px; width: 24px; text-align: center; }
+    .menu-item .label { flex: 1; font-size: 14px; color: var(--text-primary); }
+    .menu-item .arrow { color: var(--text-disabled); font-size: 16px; }
+
+    .form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--divider);
+    }
+    .form-row:last-child { border-bottom: none; }
+    .form-row .label {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .form-row input[type="time"] {
+      font-size: 14px;
+      color: var(--text-primary);
+      padding: 4px 8px;
+      background: var(--bg);
+      border-radius: 6px;
+    }
+
+    /* Switch 开关 */
+    .switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: var(--text-disabled);
+      border-radius: 12px;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .switch.on {
+      background: var(--primary);
+    }
+    .switch.on::after {
+      transform: translateX(20px);
+    }
+
+    /* ============================================================
+     * 模态框
+     * ============================================================ */
+    .modal-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-sheet {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border-radius: 16px 16px 0 0;
+      padding: 16px 16px calc(16px + var(--safe-bottom));
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .modal-header .title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .modal-header .close {
+      font-size: 20px;
+      color: var(--text-tertiary);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .form-field {
+      margin-bottom: 14px;
+    }
+    .form-field label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .form-field input[type="text"],
+    .form-field input[type="time"] {
+      width: 100%;
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      font-size: 14px;
+    }
+    .form-field input:focus {
+      border-color: var(--primary);
+      background: #fff;
+    }
+
+    .weekday-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .weekday-chip {
+      padding: 8px 0;
+      text-align: center;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      font-size: 12px;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .weekday-chip.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .modal-actions .btn {
+      flex: 1;
+      height: 44px;
+      border-radius: 22px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text-secondary);
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* ============================================================
+     * Toast 提示
+     * ============================================================ */
+    #toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.78);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 2000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ============================================================
+     * 通用工具类
+     * ============================================================ */
+    .hidden { display: none !important; }
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .text-center { text-align: center; }
+
+    /* 大屏适配（手机横屏或小平板） */
+    @media (min-width: 481px) {
+      body { background: #E8EAED; }
+      #app {
+        box-shadow: 0 0 24px rgba(0,0,0,0.08);
+        min-height: 100vh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 应用容器 -->
+  <div id="app">
+    <!-- 各页面将由 JS 动态渲染到 #page-root -->
+    <div id="page-root"></div>
+  </div>
+
+  <!-- 顶部页面标题 -->
+  <div class="page-header" id="page-header">今日用药</div>
+
+  <!-- 底部 Tab 导航 -->
+  <nav id="tab-bar">
+    <a href="#/home"      data-route="home"     class="tab-item active"><span>🏠</span><span>首页</span></a>
+    <a href="#/calendar"  data-route="calendar" class="tab-item"><span>📅</span><span>日历</span></a>
+    <a href="#/report"    data-route="report"   class="tab-item"><span>⚠️</span><span>上报</span></a>
+    <a href="#/profile"   data-route="profile"  class="tab-item"><span>👤</span><span>我的</span></a>
+  </nav>
+
+  <!-- 全局 Toast -->
+  <div id="toast"></div>
+
+  <!-- 模态框挂载点 -->
+  <div id="modal-root"></div>
+
+  <script>
+    /* ============================================================
+     * 患者用药管理 PWA - 主逻辑
+     * 开发方：青岛市市立医院 临床药学科
+     * 临床药师：孙药师
+     * ============================================================ */
+
+    'use strict';
+
+    /* ----------------------------------------------------------
+     * 1. 常量定义
+     * ---------------------------------------------------------- */
+    const STORAGE_KEYS = {
+      MEDICATIONS: 'pma_medications',
+      REPORTS:     'pma_reports',
+      SETTINGS:    'pma_settings',
+      REMIND_LOG:  'pma_remind_log'   // 记录某天是否已提醒过
+    };
+
+    const PHARMACIST = {
+      name: '孙药师',
+      dept: '临床药学科',
+      hospital: '青岛市市立医院',
+      phone: '0532-82789206'
+    };
+
+    // 严重程度标签颜色（用于记录展示）
+    const SEVERITY_MAP = {
+      '轻度': { bg: '#FFF7E6', color: '#FA8C16' },
+      '中度': { bg: '#FFF1F0', color: '#FF6B6B' },
+      '重度': { bg: '#FF4D4F', color: '#fff' }
+    };
+
+    const WEEKDAY_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const WEEKDAY_SHORT = ['日', '一', '二', '三', '四', '五', '六'];
+
+    /* ----------------------------------------------------------
+     * 2. 工具函数
+     * ---------------------------------------------------------- */
+
+    /** 生成唯一 ID（时间戳+随机数） */
+    function genId(prefix = '') {
+      return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    /** 格式化日期 YYYY-MM-DD（本地时区） */
+    function fmtDate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    /** 格式化时间 HH:MM */
+    function fmtTime(d) {
+      return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+
+    /** 格式化时间戳（用于显示打卡时间） */
+    function fmtDateTime(d) {
+      return `${fmtDate(d)} ${fmtTime(d)}:${String(d.getSeconds()).padStart(2,'0')}`;
+    }
+
+    /** 取日期对应的星期（0-6，0=周日） */
+    function dayOfWeek(dateStr) {
+      return new Date(dateStr + 'T00:00:00').getDay();
+    }
+
+    /** 转义 HTML，避免 XSS */
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /** Toast 提示 */
+    let toastTimer = null;
+    function toast(msg, duration = 1800) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+    }
+
+    /* ----------------------------------------------------------
+     * 3. 数据层（localStorage CRUD）
+     * ---------------------------------------------------------- */
+    const Storage = {
+      _read(key, fallback) {
+        try {
+          const raw = localStorage.getItem(key);
+          return raw ? JSON.parse(raw) : fallback;
+        } catch (e) {
+          console.warn('读取数据失败:', key, e);
+          return fallback;
+        }
+      },
+      _write(key, val) {
+        try {
+          localStorage.setItem(key, JSON.stringify(val));
+          return true;
+        } catch (e) {
+          console.error('写入数据失败:', key, e);
+          toast('存储空间不足，请清理照片或数据');
+          return false;
+        }
+      },
+
+      // ---- 药品 ----
+      getMedications() {
+        return this._read(STORAGE_KEYS.MEDICATIONS, []);
+      },
+      saveMedications(list) {
+        return this._write(STORAGE_KEYS.MEDICATIONS, list);
+      },
+      addMedication(med) {
+        const list = this.getMedications();
+        list.push(med);
+        return this.saveMedications(list);
+      },
+      updateMedication(med) {
+        const list = this.getMedications();
+        const idx = list.findIndex(m => m.id === med.id);
+        if (idx >= 0) {
+          list[idx] = med;
+          return this.saveMedications(list);
+        }
+        return false;
+      },
+      deleteMedication(id) {
+        const list = this.getMedications().filter(m => m.id !== id);
+        return this.saveMedications(list);
+      },
+
+      /** 给某个药品在某天添加打卡记录（每天每个药品只记一次） */
+      addCheckinLog(medId, dateStr, checkTime) {
+        const list = this.getMedications();
+        const med = list.find(m => m.id === medId);
+        if (!med) return false;
+        med.logs = med.logs || [];
+        // 同一天重复打卡只保留最新时间
+        const existing = med.logs.find(l => l.date === dateStr);
+        if (existing) {
+          existing.checkTime = checkTime;
+        } else {
+          med.logs.push({ date: dateStr, checkTime });
+        }
+        return this.saveMedications(list);
+      },
+      removeCheckinLog(medId, dateStr) {
+        const list = this.getMedications();
+        const med = list.find(m => m.id === medId);
+        if (!med) return false;
+        med.logs = (med.logs || []).filter(l => l.date !== dateStr);
+        return this.saveMedications(list);
+      },
+
+      // ---- 不良反应上报 ----
+      getReports() {
+        return this._read(STORAGE_KEYS.REPORTS, []);
+      },
+      addReport(report) {
+        const list = this.getReports();
+        list.unshift(report); // 新的在前
+        return this._write(STORAGE_KEYS.REPORTS, list);
+      },
+
+      // ---- 设置 ----
+      getSettings() {
+        return this._read(STORAGE_KEYS.SETTINGS, {
+          reminderEnabled: false,
+          reminderTime: '09:00'
+        });
+      },
+      saveSettings(settings) {
+        return this._write(STORAGE_KEYS.SETTINGS, settings);
+      },
+
+      // ---- 提醒日志（避免同一天重复提醒） ----
+      getRemindLog() {
+        return this._read(STORAGE_KEYS.REMIND_LOG, {});
+      },
+      markReminded(dateStr) {
+        const log = this.getRemindLog();
+        log[dateStr] = true;
+        return this._write(STORAGE_KEYS.REMIND_LOG, log);
+      },
+      hasReminded(dateStr) {
+        return !!this.getRemindLog()[dateStr];
+      },
+
+      // ---- 导出全部数据 ----
+      exportAll() {
+        return {
+          version: '1.0',
+          exportTime: fmtDateTime(new Date()),
+          medications: this.getMedications(),
+          reports: this.getReports(),
+          settings: this.getSettings()
+        };
+      },
+
+      // ---- 清除全部数据 ----
+      clearAll() {
+        Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
+      }
+    };
+
+    /* ----------------------------------------------------------
+     * 4. 路由（hash）
+     * ---------------------------------------------------------- */
+    const Router = {
+      current: 'home',
+      routes: {
+        home:     { title: '今日用药',     render: renderHome },
+        calendar: { title: '用药日历',     render: renderCalendar },
+        report:   { title: '不良反应上报', render: renderReport },
+        profile:  { title: '我的',         render: renderProfile }
+      },
+
+      /** 根据 hash 解析路由名 */
+      parse() {
+        const h = location.hash || '#/home';
+        const name = h.replace('#/', '').split('/')[0];
+        return this.routes[name] ? name : 'home';
+      },
+
+      /** 渲染当前路由 */
+      render() {
+        const name = this.parse();
+        this.current = name;
+        // 更新标题
+        document.getElementById('page-header').textContent = this.routes[name].title;
+        // 更新 tab 高亮
+        document.querySelectorAll('.tab-item').forEach(el => {
+          el.classList.toggle('active', el.dataset.route === name);
+        });
+        // 渲染页面
+        const root = document.getElementById('page-root');
+        root.innerHTML = '';
+        this.routes[name].render(root);
+      },
+
+      init() {
+        window.addEventListener('hashchange', () => this.render());
+        if (!location.hash) location.hash = '#/home';
+        this.render();
+      }
+    };
+
+    /* ----------------------------------------------------------
+     * 5. 模态框系统
+     * ---------------------------------------------------------- */
+    const Modal = {
+      /** 打开一个底部弹出模态框，content 为 HTML 字符串 */
+      open(title, contentHtml, onMount) {
+        const root = document.getElementById('modal-root');
+        root.innerHTML = `
+          <div class="modal-mask" id="modal-mask">
+            <div class="modal-sheet" id="modal-sheet">
+              <div class="modal-header">
+                <div class="title">${esc(title)}</div>
+                <button class="close" id="modal-close">✕</button>
+              </div>
+              <div class="modal-body">${contentHtml}</div>
+            </div>
+          </div>
+        `;
+        // 关闭事件
+        const close = () => Modal.close();
+        document.getElementById('modal-close').addEventListener('click', close);
+        document.getElementById('modal-mask').addEventListener('click', e => {
+          if (e.target.id === 'modal-mask') close();
+        });
+        if (typeof onMount === 'function') onMount();
+      },
+      close() {
+        document.getElementById('modal-root').innerHTML = '';
+      }
+    };
+
+    /* ----------------------------------------------------------
+     * 6. 页面：首页（今日用药）
+     * ---------------------------------------------------------- */
+    function renderHome(root) {
+      const now = new Date();
+      const todayStr = fmtDate(now);
+      const week = WEEKDAY_NAMES[now.getDay()];
+
+      // 今日需要服用的药品：根据 schedule 过滤
+      const meds = Storage.getMedications();
+      const todayMeds = meds
+        .filter(m => (m.schedule || [0,1,2,3,4,5,6]).includes(now.getDay()))
+        .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+      // 统计今日打卡进度
+      const doneCount = todayMeds.filter(m =>
+        (m.logs || []).some(l => l.date === todayStr)
+      ).length;
+
+      const html = `
+        <div class="page">
+          <div class="date-bar">
+            <div class="today-label">TODAY</div>
+            <div class="today-date">${todayStr}</div>
+            <div class="today-week">${week} · 您的服药计划</div>
+            <div class="stats-row">
+              <div class="stat-item">
+                <div class="stat-num">${doneCount}/${todayMeds.length}</div>
+                <div class="stat-label">今日打卡</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">${meds.length}</div>
+                <div class="stat-label">药品总数</div>
+              </div>
+            </div>
+          </div>
+
+          ${todayMeds.length === 0 ? renderMedEmpty(meds.length) : ''}
+
+          <div id="med-list">
+            ${todayMeds.map(med => renderMedCard(med, todayStr)).join('')}
+          </div>
+        </div>
+
+        ${meds.length === 0 || todayMeds.length === 0 ? '' : `
+          <button class="fab" id="fab-add">＋ 添加药品</button>
+        `}
+      `;
+
+      root.innerHTML = html;
+
+      // 绑定打卡按钮事件
+      root.querySelectorAll('.checkin-btn').forEach(btn => {
+        btn.addEventListener('click', () => handleCheckin(btn.dataset.medId, todayStr));
+      });
+
+      // 添加按钮
+      const fab = document.getElementById('fab-add');
+      if (fab) fab.addEventListener('click', openAddMedModal);
+    }
+
+    /** 渲染单个药品卡片 */
+    function renderMedCard(med, dateStr) {
+      const log = (med.logs || []).find(l => l.date === dateStr);
+      const checked = !!log;
+      const checkTimeShort = log
+        ? log.checkTime.split(' ')[1]?.slice(0, 5)
+        : '';
+
+      return `
+        <div class="card">
+          <div class="med-card">
+            <div class="med-info">
+              <div class="med-name">${esc(med.name)}</div>
+              <div class="med-meta">
+                <span class="time-tag">⏰ ${esc(med.time || '--:--')}</span>
+                <span class="dose-tag">💊 ${esc(med.dosage || '')}</span>
+              </div>
+            </div>
+            <button class="checkin-btn ${checked ? 'checked' : ''}"
+                    data-med-id="${esc(med.id)}"
+                    aria-label="${checked ? '已打卡' : '点击打卡'}">
+              ${checked
+                ? `✓<div class="check-time">${esc(checkTimeShort)}</div>`
+                : checked ? '' : '○'}
+              ${checked ? '' : '<span style="font-size:11px;margin-top:2px;">打卡</span>'}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    /** 空状态：无药品 */
+    function renderMedEmpty(totalCount) {
+      if (totalCount === 0) {
+        return `
+          <div class="empty-state">
+            <div class="emoji">💊</div>
+            <div class="tip">还没有添加药品</div>
+            <div class="sub">点击下方按钮添加您的第一个药品</div>
+          </div>
+        `;
+      }
+      return `
+        <div class="empty-state">
+          <div class="emoji">🎉</div>
+          <div class="tip">今天没有需要服用的药品</div>
+          <div class="sub">享受健康的一天</div>
+        </div>
+      `;
+    }
+
+    /** 处理打卡 */
+    function handleCheckin(medId, dateStr) {
+      const meds = Storage.getMedications();
+      const med = meds.find(m => m.id === medId);
+      if (!med) return;
+      const checked = (med.logs || []).some(l => l.date === dateStr);
+
+      if (checked) {
+        // 取消打卡（再次点击）
+        if (confirm(`确定要撤销【${med.name}】今天的打卡记录吗？`)) {
+          Storage.removeCheckinLog(medId, dateStr);
+          toast('已撤销打卡');
+          Router.render();
+        }
+      } else {
+        const now = new Date();
+        Storage.addCheckinLog(medId, dateStr, fmtDateTime(now));
+        toast(`✓ ${med.name} 已打卡`);
+        Router.render();
+      }
+    }
+
+    /* ----------------------------------------------------------
+     * 7. 添加药品模态框
+     * ---------------------------------------------------------- */
+    function openAddMedModal() {
+      const weekChips = WEEKDAY_SHORT.map((w, i) => `
+        <div class="weekday-chip active" data-day="${i}">${w}</div>
+      `).join('');
+
+      const html = `
+        <div class="form-field">
+          <label>药品名称 *</label>
+          <input type="text" id="med-name" placeholder="如：硝苯地平控释片" maxlength="40" />
+        </div>
+        <div class="form-field">
+          <label>剂量 *</label>
+          <input type="text" id="med-dosage" placeholder="如：1片 / 5mg / 10ml" maxlength="20" />
+        </div>
+        <div class="form-field">
+          <label>服药时间 *</label>
+          <input type="time" id="med-time" value="08:00" />
+        </div>
+        <div class="form-field">
+          <label>服药周期</label>
+          <div class="weekday-grid" id="weekday-grid">${weekChips}</div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">
+            点击切换，点击【全选/清空】快速设置
+            <a href="javascript:void(0)" id="weekday-all" style="color:var(--primary);margin-left:8px;">全选</a>
+            <a href="javascript:void(0)" id="weekday-none" style="color:var(--primary);margin-left:8px;">清空</a>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btn-cancel">取消</button>
+          <button class="btn btn-primary" id="btn-save">保存</button>
+        </div>
+      `;
+
+      Modal.open('添加药品', html, () => {
+        // 周期 chip 切换
+        const chips = document.querySelectorAll('#weekday-grid .weekday-chip');
+        chips.forEach(chip => {
+          chip.addEventListener('click', () => chip.classList.toggle('active'));
+        });
+        document.getElementById('weekday-all').addEventListener('click', e => {
+          e.preventDefault();
+          chips.forEach(c => c.classList.add('active'));
+        });
+        document.getElementById('weekday-none').addEventListener('click', e => {
+          e.preventDefault();
+          chips.forEach(c => c.classList.remove('active'));
+        });
+
+        document.getElementById('btn-cancel').addEventListener('click', () => Modal.close());
+        document.getElementById('btn-save').addEventListener('click', saveMedication);
+      });
+    }
+
+    function saveMedication() {
+      const name   = document.getElementById('med-name').value.trim();
+      const dosage = document.getElementById('med-dosage').value.trim();
+      const time   = document.getElementById('med-time').value;
+      const schedule = Array.from(document.querySelectorAll('#weekday-grid .weekday-chip.active'))
+        .map(c => Number(c.dataset.day));
+
+      if (!name)   { toast('请输入药品名称'); return; }
+      if (!dosage) { toast('请输入剂量'); return; }
+      if (!time)   { toast('请选择服药时间'); return; }
+      if (schedule.length === 0) { toast('请至少选择一天'); return; }
+
+      const med = {
+        id: genId('med_'),
+        name,
+        dosage,
+        time,
+        schedule,
+        logs: [],
+        createTime: fmtDateTime(new Date())
+      };
+
+      if (Storage.addMedication(med)) {
+        toast('已添加');
+        Modal.close();
+        Router.render();
+      }
+    }
+
+    /* ----------------------------------------------------------
+     * 8. 页面：日历（用药记录）
+     * ---------------------------------------------------------- */
+    let calendarState = {
+      year:  new Date().getFullYear(),
+      month: new Date().getMonth(),  // 0-11
+      selectedDate: fmtDate(new Date())
+    };
+
+    function renderCalendar(root) {
+      const { year, month, selectedDate } = calendarState;
+      const monthName = `${year}年${month + 1}月`;
+
+      const html = `
+        <div class="page">
+          <div class="cal-toolbar">
+            <button class="nav-btn" id="cal-prev">‹</button>
+            <div class="cal-title">${monthName}</div>
+            <button class="nav-btn" id="cal-next">›</button>
+          </div>
+
+          <div class="cal-grid">
+            <div class="cal-weekdays">
+              ${WEEKDAY_SHORT.map(w => `<div class="cal-weekday">${w}</div>`).join('')}
+            </div>
+            <div class="cal-days" id="cal-days"></div>
+          </div>
+
+          <div class="day-detail" id="day-detail"></div>
+        </div>
+      `;
+
+      root.innerHTML = html;
+      renderCalDays(year, month, selectedDate);
+
+      document.getElementById('cal-prev').addEventListener('click', () => {
+        calendarState.month--;
+        if (calendarState.month < 0) {
+          calendarState.month = 11;
+          calendarState.year--;
+        }
+        renderCalDays(calendarState.year, calendarState.month, calendarState.selectedDate);
+      });
+      document.getElementById('cal-next').addEventListener('click', () => {
+        calendarState.month++;
+        if (calendarState.month > 11) {
+          calendarState.month = 0;
+          calendarState.year++;
+        }
+        renderCalDays(calendarState.year, calendarState.month, calendarState.selectedDate);
+      });
+    }
+
+    /** 渲染日历格子 + 详情 */
+    function renderCalDays(year, month, selectedDate) {
+      // 更新标题
+      const toolbarTitle = document.querySelector('.cal-toolbar .cal-title');
+      if (toolbarTitle) toolbarTitle.textContent = `${year}年${month + 1}月`;
+
+      const todayStr = fmtDate(new Date());
+      const firstDay = new Date(year, month, 1);
+      const startWeekday = firstDay.getDay();      // 0-6
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+      const meds = Storage.getMedications();
+
+      // 计算每天的打卡状态
+      const dayStatusCache = {};
+      function getDayStatus(dateStr) {
+        if (dayStatusCache[dateStr]) return dayStatusCache[dateStr];
+        const dow = dayOfWeek(dateStr);
+        const scheduled = meds.filter(m => (m.schedule || [0,1,2,3,4,5,6]).includes(dow));
+        if (scheduled.length === 0) {
+          dayStatusCache[dateStr] = { icon: '', total: 0, done: 0 };
+          return dayStatusCache[dateStr];
+        }
+        const done = scheduled.filter(m => (m.logs || []).some(l => l.date === dateStr)).length;
+        let icon = '';
+        if (done === scheduled.length) icon = '🌿';
+        else if (done > 0)            icon = '🟡';
+        else                          icon = '⚪';
+        dayStatusCache[dateStr] = { icon, total: scheduled.length, done };
+        return dayStatusCache[dateStr];
+      }
+
+      // 构建单元格：上个月尾部 + 本月 + 下个月头部
+      const cells = [];
+      // 上个月尾部
+      for (let i = startWeekday - 1; i >= 0; i--) {
+        const d = daysInPrevMonth - i;
+        const prevMonth = month === 0 ? 11 : month - 1;
+        const prevYear  = month === 0 ? year - 1 : year;
+        const dateStr = `${prevYear}-${String(prevMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        cells.push({ dateStr, day: d, outside: true });
+      }
+      // 本月
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        cells.push({ dateStr, day: d, outside: false });
+      }
+      // 下个月头部（补齐到 42 格 = 6 行）
+      const remaining = 42 - cells.length;
+      for (let d = 1; d <= remaining; d++) {
+        const nextMonth = month === 11 ? 0 : month + 1;
+        const nextYear  = month === 11 ? year + 1 : year;
+        const dateStr = `${nextYear}-${String(nextMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        cells.push({ dateStr, day: d, outside: true });
+      }
+
+      const daysEl = document.getElementById('cal-days');
+      daysEl.innerHTML = cells.map(c => {
+        const status = getDayStatus(c.dateStr);
+        const isToday = c.dateStr === todayStr;
+        const isSelected = c.dateStr === selectedDate;
+        const classes = ['cal-day'];
+        if (c.outside) classes.push('outside');
+        if (isToday) classes.push('today');
+        if (isSelected) classes.push('selected');
+        return `
+          <div class="${classes.join(' ')}" data-date="${c.dateStr}">
+            <div class="day-num">${c.day}</div>
+            <div class="day-status">${status.icon}</div>
+          </div>
+        `;
+      }).join('');
+
+      // 绑定点击
+      daysEl.querySelectorAll('.cal-day').forEach(el => {
+        el.addEventListener('click', () => {
+          calendarState.selectedDate = el.dataset.date;
+          renderCalDays(year, month, el.dataset.date);
+        });
+      });
+
+      // 渲染选中日期的详情
+      renderDayDetail(selectedDate, getDayStatus);
+    }
+
+    /** 渲染选中日期详情 */
+    function renderDayDetail(dateStr, getDayStatus) {
+      const dow = dayOfWeek(dateStr);
+      const meds = Storage.getMedications();
+      const scheduled = meds.filter(m => (m.schedule || [0,1,2,3,4,5,6]).includes(dow));
+
+      const el = document.getElementById('day-detail');
+      if (!el) return;
+
+      if (scheduled.length === 0) {
+        el.innerHTML = `
+          <div class="day-detail-title">
+            <span>${dateStr} · ${WEEKDAY_NAMES[dow]}</span>
+          </div>
+          <div class="empty-state" style="padding:24px 0;">
+            <div class="emoji">📭</div>
+            <div class="tip">当天没有服药计划</div>
+          </div>
+        `;
+        return;
+      }
+
+      const rows = scheduled.map(med => {
+        const log = (med.logs || []).find(l => l.date === dateStr);
+        const checkTime = log ? log.checkTime.split(' ')[1]?.slice(0, 5) : '';
+        let dotClass = 'missed';
+        let statusText = '未打卡';
+        let mark = '○';
+        if (log) {
+          dotClass = 'done';
+          statusText = `已打卡 ${checkTime}`;
+          mark = '✓';
+        }
+        return `
+          <div class="med-mini">
+            <div class="dot ${dotClass}"></div>
+            <div class="info">
+              <div class="name">${esc(med.name)} · ${esc(med.dosage)}</div>
+              <div class="time-info">⏰ ${esc(med.time)} · ${statusText}</div>
+            </div>
+            <div class="check-mark">${mark}</div>
+          </div>
+        `;
+      }).join('');
+
+      el.innerHTML = `
+        <div class="day-detail-title">
+          <span>${dateStr} · ${WEEKDAY_NAMES[dow]}</span>
+          <span style="color:var(--text-tertiary);font-size:12px;">
+            ${getDayStatus(dateStr).done}/${getDayStatus(dateStr).total} 已完成
+          </span>
+        </div>
+        ${rows}
+      `;
+    }
+
+    /* ----------------------------------------------------------
+     * 9. 页面：不良反应上报
+     * ---------------------------------------------------------- */
+    const SYMPTOM_OPTIONS = ['恶心', '呕吐', '皮疹', '头晕', '乏力', '其他'];
+    const SEVERITY_OPTIONS = ['轻度', '中度', '重度'];
+
+    function renderReport(root) {
+      const reports = Storage.getReports();
+
+      const html = `
+        <div class="page">
+          <div class="card">
+            <div class="section-title">症状（可多选）</div>
+            <div class="symptom-grid" id="symptom-grid">
+              ${SYMPTOM_OPTIONS.map(s => `<div class="symptom-chip" data-s="${esc(s)}">${s}</div>`).join('')}
+            </div>
+
+            <div class="section-title">严重程度</div>
+            <div class="severity-group" id="severity-group">
+              ${SEVERITY_OPTIONS.map(s => `<div class="severity-item" data-sev="${esc(s)}">${s}</div>`).join('')}
+            </div>
+
+            <div class="section-title">详细描述</div>
+            <textarea class="textarea" id="report-desc" placeholder="请描述症状出现时间、持续时长、用药情况等..." maxlength="500"></textarea>
+
+            <div class="section-title mt-16">症状照片（可选）</div>
+            <label class="upload-box" id="upload-box">
+              <span id="upload-tip">📷 点击拍照或上传照片</span>
+              <input type="file" accept="image/*" capture="environment" id="photo-input" style="display:none;" />
+            </label>
+
+            <button class="primary-btn mt-16" id="btn-submit">提交上报</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span>历史记录</span>
+              <span style="font-size:12px;color:var(--text-tertiary);">共 ${reports.length} 条</span>
+            </div>
+            <div id="report-list">
+              ${reports.length === 0 ? `
+                <div class="empty-state" style="padding:24px 0;">
+                  <div class="emoji">📋</div>
+                  <div class="tip">暂无上报记录</div>
+                </div>
+              ` : reports.map(r => renderReportRecord(r)).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+
+      root.innerHTML = html;
+
+      // 症状多选
+      let selectedSymptoms = new Set();
+      let photoData = null;
+      let selectedSeverity = null;
+
+      document.querySelectorAll('#symptom-grid .symptom-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const s = chip.dataset.s;
+          if (selectedSymptoms.has(s)) {
+            selectedSymptoms.delete(s);
+            chip.classList.remove('active');
+          } else {
+            selectedSymptoms.add(s);
+            chip.classList.add('active');
+          }
+        });
+      });
+
+      // 严重程度单选
+      document.querySelectorAll('#severity-group .severity-item').forEach(it => {
+        it.addEventListener('click', () => {
+          document.querySelectorAll('#severity-group .severity-item').forEach(x => x.classList.remove('active'));
+          it.classList.add('active');
+          selectedSeverity = it.dataset.sev;
+        });
+      });
+
+      // 照片上传
+      const photoInput = document.getElementById('photo-input');
+      photoInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+          toast('图片需小于 2MB，请压缩后再上传');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => {
+          photoData = ev.target.result;
+          const box = document.getElementById('upload-box');
+          box.classList.add('has-photo');
+          box.innerHTML = `
+            <img src="${photoData}" alt="症状照片" />
+            <button type="button" class="remove-photo" id="remove-photo">移除照片</button>
+            <input type="file" accept="image/*" capture="environment" id="photo-input" style="display:none;" />
+          `;
+          // 重新绑定
+          document.getElementById('photo-input').addEventListener('change', photoInput.onchange);
+          // 但 innerHTML 替换会丢失 onchange 引用，改用重新查询
+          rebindPhotoInput(photoDataRef => { photoData = photoDataRef; });
+          document.getElementById('remove-photo').addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            photoData = null;
+            resetUploadBox();
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // 提交
+      document.getElementById('btn-submit').addEventListener('click', () => {
+        const symptoms = Array.from(selectedSymptoms);
+        const desc = document.getElementById('report-desc').value.trim();
+
+        if (symptoms.length === 0) { toast('请至少选择一个症状'); return; }
+        if (!selectedSeverity)     { toast('请选择严重程度'); return; }
+
+        const report = {
+          id: genId('rep_'),
+          date: fmtDate(new Date()),
+          symptoms,
+          severity: selectedSeverity,
+          description: desc,
+          photo: photoData,
+          submitTime: fmtDateTime(new Date())
+        };
+
+        if (Storage.addReport(report)) {
+          toast('✓ 已提交');
+          // 重置表单
+          selectedSymptoms.clear();
+          selectedSeverity = null;
+          photoData = null;
+          document.getElementById('report-desc').value = '';
+          document.querySelectorAll('.symptom-chip').forEach(c => c.classList.remove('active'));
+          document.querySelectorAll('.severity-item').forEach(c => c.classList.remove('active'));
+          resetUploadBox();
+          Router.render();
+        }
+      });
+    }
+
+    /** 重新绑定照片 input（innerHTML 替换后需要） */
+    function rebindPhotoInput(onPhoto) {
+      const input = document.getElementById('photo-input');
+      if (!input) return;
+      input.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+          toast('图片需小于 2MB');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => onPhoto(ev.target.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function resetUploadBox() {
+      const box = document.getElementById('upload-box');
+      if (!box) return;
+      box.classList.remove('has-photo');
+      box.innerHTML = `
+        <span id="upload-tip">📷 点击拍照或上传照片</span>
+        <input type="file" accept="image/*" capture="environment" id="photo-input" style="display:none;" />
+      `;
+      rebindPhotoInput(photoDataRef => { photoData = photoDataRef; });
+    }
+
+    /** 渲染上报记录卡片 */
+    function renderReportRecord(r) {
+      const sev = SEVERITY_MAP[r.severity] || { bg: '#FF6B6B', color: '#fff' };
+      return `
+        <div class="report-record">
+          <div class="top">
+            <span class="date">${esc(r.date)} · ${esc(r.submitTime.split(' ')[1] || '')}</span>
+            <span class="severity-tag" style="background:${sev.bg};color:${sev.color};">${esc(r.severity)}</span>
+          </div>
+          <div class="symptoms">${r.symptoms.map(esc).join('、')}</div>
+          ${r.description ? `<div class="desc">${esc(r.description)}</div>` : ''}
+        </div>
+      `;
+    }
+
+    /* ----------------------------------------------------------
+     * 10. 页面：我的
+     * ---------------------------------------------------------- */
+    function renderProfile(root) {
+      const settings = Storage.getSettings();
+
+      const html = `
+        <div class="page">
+          <div class="pharmacist-card">
+            <div class="pharmacist-avatar">👨‍⚕️</div>
+            <div class="pharmacist-info">
+              <div class="name">${esc(PHARMACIST.name)}</div>
+              <div class="dept">${esc(PHARMACIST.dept)}</div>
+              <div class="hospital">${esc(PHARMACIST.hospital)}</div>
+            </div>
+          </div>
+
+          <button class="contact-btn" id="btn-contact">
+            💬 联系药师（电话：${esc(PHARMACIST.phone)}）
+          </button>
+
+          <div class="card mt-16">
+            <div class="card-title">⏰ 复诊提醒</div>
+            <div class="form-row">
+              <div class="label">启用每日提醒</div>
+              <div class="switch ${settings.reminderEnabled ? 'on' : ''}" id="switch-remind"></div>
+            </div>
+            <div class="form-row">
+              <div class="label">提醒时间</div>
+              <input type="time" id="remind-time" value="${esc(settings.reminderTime || '09:00')}" />
+            </div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px;line-height:1.6;">
+              提示：开启后，每天到达提醒时间会弹出通知（需保持 App 在前台运行）
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📦 数据管理</div>
+            <div class="menu-list" style="margin:0;box-shadow:none;">
+              <div class="menu-item" id="btn-export">
+                <div class="ico">📤</div>
+                <div class="label">导出数据（JSON）</div>
+                <div class="arrow">›</div>
+              </div>
+              <div class="menu-item" id="btn-clear">
+                <div class="ico">🗑️</div>
+                <div class="label" style="color:var(--warning);">清除所有数据</div>
+                <div class="arrow">›</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">ℹ️ 关于</div>
+            <div style="font-size:12px;color:var(--text-secondary);line-height:1.8;">
+              <div>应用名称：患者用药管理</div>
+              <div>开发单位：青岛市市立医院 临床药学科</div>
+              <div>药师：孙药师</div>
+              <div>版本：v1.0.0</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      root.innerHTML = html;
+
+      // 联系药师：尝试拉起微信；否则弹出提示
+      document.getElementById('btn-contact').addEventListener('click', () => {
+        // 企业内可替换为： location.href = 'weixin://';
+        // 这里直接拨打科室电话
+        if (confirm(`将拨打药师电话 ${PHARMACIST.phone}，是否继续？`)) {
+          location.href = `tel:${PHARMACIST.phone}`;
+        }
+      });
+
+      // 提醒开关
+      const switchEl = document.getElementById('switch-remind');
+      switchEl.addEventListener('click', () => {
+        const cur = Storage.getSettings();
+        cur.reminderEnabled = !cur.reminderEnabled;
+        Storage.saveSettings(cur);
+        switchEl.classList.toggle('on', cur.reminderEnabled);
+        toast(cur.reminderEnabled ? '已开启每日提醒' : '已关闭每日提醒');
+      });
+
+      // 提醒时间
+      document.getElementById('remind-time').addEventListener('change', e => {
+        const cur = Storage.getSettings();
+        cur.reminderTime = e.target.value;
+        Storage.saveSettings(cur);
+        toast('提醒时间已更新');
+      });
+
+      // 导出
+      document.getElementById('btn-export').addEventListener('click', exportData);
+      // 清除
+      document.getElementById('btn-clear').addEventListener('click', clearDataConfirm);
+    }
+
+    /** 导出数据为 JSON 文件 */
+    function exportData() {
+      const data = Storage.exportAll();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `用药管理数据_${fmtDate(new Date())}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('✓ 已导出');
+    }
+
+    /** 清除数据二次确认 */
+    function clearDataConfirm() {
+      Modal.open('⚠️ 清除所有数据', `
+        <div style="padding:12px 0;font-size:14px;color:var(--text-secondary);line-height:1.8;">
+          此操作将<strong style="color:var(--warning);">永久删除</strong>本机所有数据：
+          <ul style="margin:8px 0;padding-left:20px;">
+            <li>所有药品及记录</li>
+            <li>所有不良反应上报</li>
+            <li>提醒设置</li>
+          </ul>
+          请确认是否继续？
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btn-cancel-clear">取消</button>
+          <button class="btn btn-primary danger-btn" id="btn-confirm-clear">确认清除</button>
+        </div>
+      `, () => {
+        document.getElementById('btn-cancel-clear').addEventListener('click', () => Modal.close());
+        document.getElementById('btn-confirm-clear').addEventListener('click', () => {
+          Storage.clearAll();
+          Modal.close();
+          toast('数据已清除');
+          setTimeout(() => location.reload(), 600);
+        });
+      });
+    }
+
+    /* ----------------------------------------------------------
+     * 11. 复诊提醒（每分钟检查一次）
+     * ---------------------------------------------------------- */
+    function startReminderLoop() {
+      // 请求通知权限（首次开启时）
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
+
+      // 每 30 秒检查一次
+      setInterval(() => {
+        const settings = Storage.getSettings();
+        if (!settings.reminderEnabled) return;
+
+        const now = new Date();
+        const todayStr = fmtDate(now);
+        const currentHM = fmtTime(now);
+        if (currentHM !== settings.reminderTime) return;
+
+        // 同一天只提醒一次
+        if (Storage.hasReminded(todayStr)) return;
+
+        Storage.markReminded(todayStr);
+
+        // 统计今日完成度
+        const dow = now.getDay();
+        const meds = Storage.getMedications();
+        const todayMeds = meds.filter(m => (m.schedule || [0,1,2,3,4,5,6]).includes(dow));
+        const done = todayMeds.filter(m => (m.logs || []).some(l => l.date === todayStr)).length;
+
+        const body = todayMeds.length === 0
+          ? '今天没有服药计划'
+          : `今日已完成 ${done}/${todayMeds.length}，记得按时服药哦`;
+
+        // 系统通知（需要权限）
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('💊 用药提醒', { body, icon: '/icon-192.png' });
+          } catch (e) { /* iOS Safari 不支持 new Notification */ }
+        }
+
+        // 应用内弹窗（兜底）
+        if (Router.current === 'home') {
+          toast(`⏰ ${body}`, 4000);
+        } else {
+          Modal.open('💊 用药提醒', `
+            <div style="padding:12px 0;font-size:14px;color:var(--text-secondary);line-height:1.8;">
+              ${esc(body)}
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-primary" id="btn-remind-ok">我知道了</button>
+            </div>
+          `, () => {
+            document.getElementById('btn-remind-ok').addEventListener('click', () => {
+              Modal.close();
+              location.hash = '#/home';
+            });
+          });
+        }
+      }, 30 * 1000);
+    }
+
+    /* ----------------------------------------------------------
+     * 12. PWA 注册（Service Worker）
+     * ---------------------------------------------------------- */
+    function registerSW() {
+      if ('serviceWorker' in navigator) {
+        // 仅在生产环境（HTTPS 或 localhost）注册
+        if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+              .then(reg => console.log('[SW] 注册成功:', reg.scope))
+              .catch(err => console.warn('[SW] 注册失败:', err));
+          });
+        } else {
+          console.info('[SW] 非 HTTPS/localhost 环境，跳过注册');
+        }
+      }
+    }
+
+    /* ----------------------------------------------------------
+     * 13. 启动
+     * ---------------------------------------------------------- */
+    function bootstrap() {
+      // 路由初始化
+      Router.init();
+      // 注册 Service Worker
+      registerSW();
+      // 启动提醒循环
+      startReminderLoop();
+    }
+
+    // DOM 就绪后启动
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootstrap);
+    } else {
+      bootstrap();
+    }
+  </script>
+</body>
+</html>

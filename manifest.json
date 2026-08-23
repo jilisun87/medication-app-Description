@@ -1,0 +1,43 @@
+{
+  "name": "患者用药管理 - 青岛市市立医院",
+  "short_name": "用药管理",
+  "description": "青岛市市立医院 临床药学科 出品的患者用药管理 PWA，支持用药打卡、日历记录、不良反应上报、复诊提醒。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F7FA",
+  "theme_color": "#1890FF",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["medical", "health", "lifestyle"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "今日用药",
+      "short_name": "今日",
+      "url": "./index.html#/home",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "上报不良反应",
+      "short_name": "上报",
+      "url": "./index.html#/report",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false
+}
