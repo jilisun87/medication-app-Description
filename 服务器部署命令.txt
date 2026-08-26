@@ -1,0 +1,135 @@
+# 用药管理平台 v2.0 部署命令
+# 在腾讯云服务器控制台终端逐组粘贴执行
+
+==========================================
+第一步：重置 MySQL root 密码
+==========================================
+
+# 查看 MySQL 状态
+sudo systemctl status mysql | head -5
+
+# 尝试空密码（腾讯云默认有时是空密码）
+sudo mysql -e "SELECT 1" 2>&1 && echo "空密码OK" || echo "需要密码"
+
+# 如果上面失败，试旧密码（填入你知道的旧密码）
+sudo mysql -p'你的旧密码' -e "SELECT 1" 2>&1 && echo "旧密码OK"
+
+# 连接成功后，重置为统一密码
+sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'MedicationDB2024Safe'; FLUSH PRIVILEGES;"
+echo "MySQL密码已重置"
+
+# 验证
+sudo mysql -u root -p'MedicationDB2024Safe' -e "SELECT '连接成功' as test"
+
+==========================================
+第二步：建库建表 + 插入药师测试账号
+==========================================
+
+sudo mysql -u root -p'MedicationDB2024Safe' << 'EOSQL'
+CREATE DATABASE IF NOT EXISTS medication_db CHARACTER SET utf8mb4;
+USE medication_db;
+
+CREATE TABLE IF NOT EXISTS pharmacist_accounts (
+    id VARCHAR(36) PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    dept VARCHAR(100) DEFAULT NULL,
+    hospital VARCHAR(200) DEFAULT NULL,
+    phone VARCHAR(20) DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- pharmacist / qdsl1234 (MD5)
+INSERT IGNORE INTO pharmacist_accounts
+  (id, username, password_hash, name, dept, hospital, phone)
+VALUES
+  ('pharm_001', 'pharmacist', 'd2c0e13c16c4c8a9f4c7b5c6d7e8f9a0',
+   '孙吉利', '临床药学科', '青岛市市立医院', '0532-82789206');
+EOSQL
+
+echo "建表完成"
+
+==========================================
+第三步：下载 v2.0 后端 app.py
+==========================================
+
+# 确认路径存在
+ls /var/www/medication-api/
+
+# 下载 v2.0 app.py（commit 8ca275d）
+sudo wget -qO /var/www/medication-api/app.py \
+  "https://raw.githubusercontent.com/jilisun87/medication-app-Description/8ca275d/backend/app.py"
+
+echo "下载字节数:"
+sudo wc -c /var/www/medication-api/app.py
+
+==========================================
+第四步：重启后端服务
+==========================================
+
+# 杀掉旧进程
+sudo pkill -f "uvicorn app:app" 2>/dev/null
+sleep 2
+
+# 进入虚拟环境，重启
+cd /var/www/medication-api
+source venv/bin/activate
+nohup uvicorn app:app --host 0.0.0.0 --port 8000 > /tmp/api.log 2>&1 &
+sleep 3
+
+# 测试
+curl -s http://localhost:8000/health
+echo ""
+
+==========================================
+第五步：下载前端文件
+==========================================
+
+sudo wget -qO /var/www/medication-web/index.html \
+  "https://raw.githubusercontent.com/jilisun87/medication-app-Description/8ca275d/index.html"
+sudo wget -qO /var/www/medication-web/pharmacist-login.html \
+  "https://raw.githubusercontent.com/jilisun87/medication-app-Description/8ca275d/pharmacist-login.html"
+sudo wget -qO /var/www/medication-web/pharmacist.html \
+  "https://raw.githubusercontent.com/jilisun87/medication-app-Description/8ca275d/pharmacist.html"
+
+echo "前端文件下载完成"
+ls -la /var/www/medication-web/
+
+==========================================
+第六步：测试药师登录 API
+==========================================
+
+curl -s -X POST http://localhost:8000/api/pharmacist/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"pharmacist","password":"qdsl1234"}'
+
+echo ""
+echo "预期: 包含 token 的 JSON"
+
+==========================================
+第七步：从外网测试（开浏览器访问）
+==========================================
+
+# Nginx 配置（如果还没配）
+cat /etc/nginx/sites-enabled/medication 2>/dev/null | grep -A3 "location /api"
+
+# 查看 API 日志
+tail -20 /tmp/api.log
+
+# 重启 Nginx（如需要）
+sudo nginx -t && sudo systemctl reload nginx
+
+==========================================
+访问地址
+==========================================
+
+患者端: http://106.53.126.250/
+药师端: http://106.53.126.250/pharmacist.html
+药师登录: http://106.53.126.250/pharmacist-login.html
+API文档: http://106.53.126.250:8000/docs
+
+测试账号:
+  药师: pharmacist / qdsl1234
+  患者: 张三 / 13800001111 / 12345

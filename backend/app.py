@@ -328,10 +328,12 @@ def list_adr(authorization: str = Header(None)):
 # ============ 消息 ============
 class MessageInput(BaseModel):
     conversation_id: str = None
-    content: str = None
-    photo_base64: str = None
-    audio_base64: str = None
-    audio_duration: int = None
+    content: str | None = None
+    photo_base64: str | None = None
+    photo: str | None = None  # 兼容前端旧字段名
+    audio_base64: str | None = None
+    audio: str | None = None  # 兼容前端旧字段名
+    audio_duration: int = 0
 
 @app.get("/api/messages")
 def get_messages(authorization: str = Header(None)):
