@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>药师登录 · 青岛市市立医院</title>
+  <style>
+    /* ============================================================
+     * 变量定义
+     * ============================================================ */
+    :root {
+      --primary: #1890FF;
+      --primary-dark: #096DD9;
+      --primary-light: #E6F7FF;
+      --success: #52C41A;
+      --warning: #FF6B6B;
+      --bg: #F5F7FA;
+      --card-bg: #FFFFFF;
+      --text-primary: #262626;
+      --text-secondary: #595959;
+      --text-tertiary: #8C8C8C;
+      --border: #F0F0F0;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ============================================================
+     * 页面布局
+     * ============================================================ */
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #1890FF 0%, #096DD9 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* ============================================================
+     * 登录卡片
+     * ============================================================ */
+    .login-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      width: 100%;
+      max-width: 400px;
+      padding: 40px 32px;
+      text-align: center;
+    }
+
+    /* 医院Logo和名称 */
+    .hospital-logo { font-size: 48px; margin-bottom: 12px; }
+    .hospital-name { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .dept-name { font-size: 13px; color: var(--text-tertiary); margin-bottom: 32px; }
+
+    /* 标题 */
+    .title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    .subtitle { font-size: 13px; color: var(--text-tertiary); margin-bottom: 28px; }
+
+    /* 表单项 */
+    .form-field { margin-bottom: 16px; text-align: left; }
+    .form-field label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    .form-field input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-field input:focus { border-color: var(--primary); }
+    .form-field input.error { border-color: var(--warning); }
+
+    /* 主按钮 */
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    /* 错误提示 */
+    .error-msg {
+      color: var(--warning);
+      font-size: 13px;
+      margin-top: 12px;
+      min-height: 18px;
+    }
+
+    /* 返回链接 */
+    .back-link {
+      display: block;
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .back-link:hover { text-decoration: underline; }
+
+    /* 演示账号提示 */
+    .demo-hint {
+      margin-top: 24px;
+      padding: 14px;
+      background: var(--primary-light);
+      border-radius: var(--radius);
+      font-size: 12px;
+      color: var(--primary-dark);
+      line-height: 1.7;
+      text-align: left;
+    }
+    .demo-hint strong { display: block; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <!-- 医院标识 -->
+    <div class="hospital-logo">🏥</div>
+    <div class="hospital-name">青岛市市立医院</div>
+    <div class="dept-name">临床药学科 · 用药管理平台</div>
+
+    <!-- 登录表单 -->
+    <div class="title">药师登录</div>
+    <div class="subtitle">请输入授权账号登录管理后台</div>
+
+    <div class="form-field">
+      <label>药师账号</label>
+      <input type="text" id="username" placeholder="请输入账号" autocomplete="off" />
+    </div>
+    <div class="form-field">
+      <label>登录密码</label>
+      <input type="password" id="password" placeholder="请输入密码" />
+    </div>
+
+    <button class="btn-primary" id="btn-login">登 录</button>
+    <div class="error-msg" id="error-msg"></div>
+
+    <a href="index.html" class="back-link">← 返回患者端</a>
+
+    <!-- 演示账号提示 -->
+    <div class="demo-hint">
+      <strong>📌 演示账号</strong>
+      账号：pharmacist<br>
+      密码：qdsl1234<br><br>
+      <strong>⚠️ 正式使用</strong>
+      需联系管理员开通专属账号
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+     * 演示账号配置（正式环境替换为后端验证）
+     * ============================================================ */
+    // DOM 元素引用
+    const btnLogin = document.getElementById('btn-login');
+    const inputUsername = document.getElementById('username');
+    const inputPassword = document.getElementById('password');
+    const errorMsg = document.getElementById('error-msg');
+
+    /* ============================================================
+     * 登录处理（真实 API 调用）
+     * ============================================================ */
+    async function doLogin() {
+      const u = inputUsername.value.trim();
+      const p = inputPassword.value;
+
+      // 清空错误状态
+      errorMsg.textContent = '';
+      inputUsername.classList.remove('error');
+      inputPassword.classList.remove('error');
+
+      if (!u) {
+        errorMsg.textContent = '请输入账号';
+        inputUsername.classList.add('error');
+        return;
+      }
+      if (!p) {
+        errorMsg.textContent = '请输入密码';
+        inputPassword.classList.add('error');
+        return;
+      }
+
+      // 按钮禁用 + loading
+      btnLogin.disabled = true;
+      btnLogin.textContent = '登录中…';
+
+      try {
+        const res = await fetch('/api/pharmacist/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const json = await res.json();
+
+        if (!res.ok) {
+          errorMsg.textContent = json.detail || json.message || '账号或密码错误';
+          inputUsername.classList.add('error');
+          btnLogin.disabled = false;
+          btnLogin.textContent = '登 录';
+          return;
+        }
+
+        // 登录成功，保存 token 和药师信息
+        const pharm = json.data.pharmacist;
+        sessionStorage.setItem('pharm_token', json.data.token);
+        sessionStorage.setItem('pharmacist_session', JSON.stringify({
+          username: u,
+          name: pharm.name,
+          dept: pharm.dept,
+          hospital: pharm.hospital,
+          loginTime: new Date().toISOString()
+        }));
+
+        // 跳转到管理后台
+        location.href = 'pharmacist.html';
+      } catch (err) {
+        errorMsg.textContent = '网络错误，请检查网络后重试';
+        btnLogin.disabled = false;
+        btnLogin.textContent = '登 录';
+      }
+    }
+
+    /* ============================================================
+     * 事件绑定
+     * ============================================================ */
+    btnLogin.addEventListener('click', doLogin);
+    inputPassword.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+  </script>
+</body>
+</html>

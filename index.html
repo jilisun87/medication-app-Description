@@ -12,6 +12,8 @@
 
   <!-- PWA 配置 -->
   <link rel="manifest" href="manifest.json" />
+  <!-- OCR 引擎 -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <!-- 内嵌 SVG favicon，避免额外请求 -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%8A%3C/text%3E%3C/svg%3E" />
 
@@ -172,6 +174,18 @@
 
     .tab-item.active {
       color: var(--primary);
+      font-weight: 600;
+    }
+    .tab-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 2px 2px 0 0;
     }
 
     /* ============================================================
@@ -181,6 +195,9 @@
       padding: 16px;
       animation: fadeIn 0.25s ease;
     }
+    .page:first-child {
+      padding-top: 12px;
+    }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
@@ -189,7 +206,7 @@
 
     .card {
       background: var(--card-bg);
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       box-shadow: var(--shadow);
       padding: 16px;
       margin-bottom: 12px;
@@ -199,7 +216,7 @@
       font-size: 16px;
       font-weight: 600;
       color: var(--text-primary);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -209,9 +226,9 @@
      * 首页 - 今日用药
      * ============================================================ */
     .date-bar {
-      background: linear-gradient(135deg, var(--primary), #40a9ff);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: #fff;
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       padding: 20px 16px;
       margin-bottom: 16px;
       box-shadow: var(--shadow);
@@ -263,7 +280,7 @@
       min-width: 0;
     }
     .med-name {
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 600;
       color: var(--text-primary);
     }
@@ -290,11 +307,11 @@
     }
 
     .checkin-btn {
-      width: 56px;
-      height: 56px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
       background: #fff;
-      border: 2px solid var(--warning);
+      border: 2.5px solid var(--warning);
       color: var(--warning);
       font-size: 22px;
       display: flex;
@@ -302,6 +319,7 @@
       justify-content: center;
       flex-shrink: 0;
       transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(255,107,107,0.2);
     }
     .checkin-btn:active { transform: scale(0.92); }
 
@@ -309,6 +327,7 @@
       background: var(--success);
       border-color: var(--success);
       color: #fff;
+      box-shadow: 0 2px 8px rgba(82,196,26,0.3);
     }
 
     .checkin-btn .check-time {
@@ -318,46 +337,53 @@
       line-height: 1;
     }
 
-    /* 浮动按钮 - 添加药品 */
-    .fab {
+    /* 添加药品按钮 - 底部固定全宽样式 */
+    .add-med-btn {
       position: fixed;
-      bottom: calc(var(--tab-height) + var(--safe-bottom) + 16px);
+      bottom: calc(var(--tab-height) + var(--safe-bottom) + 8px);
+      left: 16px;
       right: 16px;
-      max-width: 480px;
-      width: calc(100% - 32px);
+      max-width: 448px;
+      margin: 0 auto;
       background: var(--primary);
       color: #fff;
-      height: 48px;
-      border-radius: 24px;
+      height: 52px;
+      border-radius: var(--radius-lg);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      font-size: 15px;
-      font-weight: 500;
-      box-shadow: 0 4px 12px rgba(24,144,255,0.4);
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(24,144,255,0.35);
       z-index: 50;
+      transition: box-shadow 0.2s;
     }
-    .fab:active { transform: scale(0.98); }
+    .add-med-btn:active {
+      box-shadow: 0 2px 8px rgba(24,144,255,0.25);
+      opacity: 0.92;
+    }
 
     /* 空状态 */
     .empty-state {
       text-align: center;
-      padding: 48px 24px;
+      padding: 60px 24px;
       color: var(--text-tertiary);
     }
     .empty-state .emoji {
-      font-size: 48px;
-      margin-bottom: 12px;
+      font-size: 64px;
+      margin-bottom: 16px;
     }
     .empty-state .tip {
-      font-size: 14px;
-      margin-bottom: 8px;
-      color: var(--text-secondary);
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-primary);
     }
     .empty-state .sub {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-tertiary);
+      margin-bottom: 24px;
     }
 
     /* ============================================================
@@ -411,7 +437,7 @@
     .cal-days {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
+      gap: 6px;
     }
     .cal-day {
       aspect-ratio: 1;
@@ -438,7 +464,7 @@
     .cal-day.selected .day-status { filter: brightness(1.3); }
     .cal-day .day-num { font-size: 14px; line-height: 1; }
     .cal-day .day-status {
-      font-size: 11px;
+      font-size: 12px;
       margin-top: 2px;
       line-height: 1;
     }
@@ -484,31 +510,33 @@
      * 不良反应上报页
      * ============================================================ */
     .section-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text-primary);
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .symptom-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
       margin-bottom: 16px;
     }
     .symptom-chip {
-      padding: 8px 14px;
-      border-radius: 20px;
+      padding: 10px 8px;
+      border-radius: var(--radius);
       background: var(--card-bg);
       color: var(--text-secondary);
-      font-size: 13px;
-      border: 1px solid var(--border);
+      font-size: 14px;
+      border: 1.5px solid var(--border);
       transition: all 0.15s;
+      text-align: center;
     }
     .symptom-chip.active {
       background: var(--warning-light);
       color: var(--warning);
       border-color: var(--warning);
+      font-weight: 600;
     }
 
     .severity-group {
@@ -578,19 +606,20 @@
 
     .primary-btn {
       width: 100%;
-      height: 48px;
-      border-radius: 24px;
+      height: 50px;
+      border-radius: var(--radius-lg);
       background: var(--primary);
       color: #fff;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
-      box-shadow: 0 4px 12px rgba(24,144,255,0.3);
-      transition: opacity 0.2s;
+      box-shadow: 0 4px 16px rgba(24,144,255,0.35);
+      transition: opacity 0.2s, box-shadow 0.2s;
     }
-    .primary-btn:active { opacity: 0.85; }
+    .primary-btn:active { opacity: 0.88; }
     .primary-btn:disabled {
       background: var(--text-disabled);
       box-shadow: none;
+      cursor: not-allowed;
     }
 
     .danger-btn {
@@ -633,9 +662,9 @@
      * 我的页
      * ============================================================ */
     .pharmacist-card {
-      background: linear-gradient(135deg, var(--primary), #40a9ff);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: #fff;
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       padding: 20px 16px;
       box-shadow: var(--shadow);
       margin-bottom: 16px;
@@ -671,17 +700,18 @@
 
     .contact-btn {
       width: 100%;
-      height: 44px;
+      height: 48px;
       background: rgba(255,255,255,0.95);
       color: var(--primary);
-      border-radius: 22px;
-      font-size: 14px;
+      border-radius: var(--radius);
+      font-size: 15px;
       font-weight: 600;
-      margin-top: 12px;
+      margin-top: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
+      box-shadow: var(--shadow);
     }
 
     .menu-list {
@@ -897,6 +927,248 @@
     .text-center { text-align: center; }
 
     /* 大屏适配（手机横屏或小平板） */
+    /* ============================================================
+     * 联系药师 - 消息列表
+     * ============================================================ */
+    .chat-list { list-style: none; margin: 0; padding: 0; }
+    .chat-list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .chat-list-item:active { background: var(--primary-light); }
+    .chat-avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .chat-avatar.has-unread {
+      background: var(--warning);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .chat-info { flex: 1; min-width: 0; }
+    .chat-info-top {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .chat-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .chat-time { font-size: 12px; color: var(--text-tertiary); }
+    .chat-preview {
+      font-size: 13px; color: var(--text-secondary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-top: 4px;
+    }
+    .unread-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+      flex-shrink: 0;
+      margin-right: 4px;
+    }
+
+    /* ============================================================
+     * 联系药师 - 对话详情页
+     * ============================================================ */
+    .chat-detail-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .chat-back-btn {
+      font-size: 20px; color: var(--primary);
+      padding: 4px 8px;
+    }
+    .chat-header-info { flex: 1; }
+    .chat-header-name { font-size: 15px; font-weight: 600; }
+    .chat-header-sub { font-size: 12px; color: var(--text-secondary); }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msg-row { display: flex; align-items: flex-end; gap: 8px; max-width: 80%; }
+    .msg-row.patient { align-self: flex-end; flex-direction: row-reverse; }
+    .msg-row.pharmacist { align-self: flex-start; }
+
+    .msg-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .msg-row.patient .msg-avatar { background: var(--primary); color: #fff; }
+    .msg-row.pharmacist .msg-avatar { background: var(--success); color: #fff; }
+
+    .msg-bubble {
+      max-width: 100%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .msg-row.patient .msg-bubble {
+      background: var(--primary);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg-row.pharmacist .msg-bubble {
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border-bottom-left-radius: 4px;
+      box-shadow: var(--shadow);
+    }
+    .msg-time {
+      font-size: 11px; color: var(--text-tertiary);
+      margin-top: 4px;
+      text-align: right;
+    }
+    .msg-row.pharmacist .msg-time { text-align: left; }
+
+    .msg-photo {
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 8px;
+      display: block;
+      cursor: pointer;
+    }
+    .msg-audio {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      min-width: 80px; max-width: 200px;
+      cursor: pointer;
+      background: var(--bg);
+      border: none;
+      font-size: 14px;
+      font-family: inherit;
+      text-align: left;
+    }
+    .msg-audio:hover { filter: brightness(0.95); }
+    .msg-audio.playing { background: var(--primary-light); }
+    .msg-audio .audio-icon { font-size: 20px; flex-shrink: 0; }
+    .msg-audio .audio-dur { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+    .msg-audio.playing .audio-dur { color: var(--primary); }
+    .msg-row.pharmacist .msg-audio { background: #e6f7ff; }
+    .msg-row.pharmacist .msg-audio:hover { background: #d9f0ff; }
+    .msg-row.pharmacist .msg-audio.playing { background: #bae0ff; }
+    .msg-row.pharmacist .msg-audio .audio-dur { color: var(--primary-dark); }
+
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      padding-bottom: calc(10px + var(--safe-bottom));
+    }
+    .chat-input {
+      flex: 1;
+      height: 38px;
+      background: var(--bg);
+      border-radius: 19px;
+      padding: 0 16px;
+      font-size: 14px;
+    }
+    .chat-send-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    .chat-send-btn:disabled { opacity: 0.4; }
+    .chat-camera-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--bg);
+      color: var(--text-secondary);
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .chat-mic-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--bg);
+      color: var(--text-secondary);
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .chat-mic-btn:active { background: var(--border); }
+    .chat-mic-btn.recording {
+      background: #ff4d4f;
+      color: #fff;
+      animation: mic-pulse 1s infinite;
+    }
+    @keyframes mic-pulse {
+      0%,100% { transform: scale(1); }
+      50% { transform: scale(1.12); }
+    }
+    .recording-hint {
+      position: fixed;
+      bottom: calc(var(--tab-height) + var(--safe-bottom) + 70px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(38,38,38,0.85);
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      z-index: 200;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .recording-hint.show { display: flex; }
+    .recording-hint .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #ff4d4f;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ============================================================
+     * 联系药师 - 药师未读气泡提示
+     * ============================================================ */
+    .pharmacist-reply-hint {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      padding: 4px 0;
+    }
+
     @media (min-width: 481px) {
       body { background: #E8EAED; }
       #app {
@@ -923,6 +1195,7 @@
     <a href="#/calendar"  data-route="calendar" class="tab-item"><span>📅</span><span>日历</span></a>
     <a href="#/report"    data-route="report"   class="tab-item"><span>⚠️</span><span>上报</span></a>
     <a href="#/profile"   data-route="profile"  class="tab-item"><span>👤</span><span>我的</span></a>
+    <a href="#/chat"      data-route="chat"     class="tab-item"><span>💬</span><span>联系药师</span></a>
   </nav>
 
   <!-- 全局 Toast -->
@@ -947,7 +1220,9 @@
       MEDICATIONS: 'pma_medications',
       REPORTS:     'pma_reports',
       SETTINGS:    'pma_settings',
-      REMIND_LOG:  'pma_remind_log'   // 记录某天是否已提醒过
+      REMIND_LOG:  'pma_remind_log',  // 记录某天是否已提醒过
+      PATIENT:     'pma_patient',      // 患者信息
+      MESSAGES:    'pma_messages'      // 联系药师消息
     };
 
     const PHARMACIST = {
@@ -956,6 +1231,46 @@
       hospital: '青岛市市立医院',
       phone: '0532-82789206'
     };
+
+    /* ----------------------------------------------------------
+     * 1b. API 配置
+     * ---------------------------------------------------------- */
+    const API_BASE = '';  // 走 Nginx 反向代理，同源请求
+
+    /**
+     * 通用 Fetch 封装，自动携带 Token，处理 401
+     * @param {string} path  API 路径（不含 API_BASE）
+     * @param {object} options fetch 选项
+     * @returns {Promise<any>}  返回 data 字段或整个 JSON
+     */
+    async function apiFetch(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = localStorage.getItem('pma_token');
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      try {
+        const res = await fetch(API_BASE + path, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+        const json = await res.json();
+        if (!res.ok) {
+          if (res.status === 401) {
+            // Token 失效，清除登录状态，提示重新登录
+            localStorage.removeItem('pma_token');
+            localStorage.removeItem('pma_patient_id');
+            toast('登录已过期，请重新登录');
+            setTimeout(() => { Storage.clearAll(); location.reload(); }, 1500);
+          }
+          throw new Error(json.detail || json.message || '请求失败');
+        }
+        return json.data !== undefined ? json.data : json;
+      } catch (err) {
+        if (err.message !== '请求失败') {
+          toast('网络异常：' + err.message);
+        }
+        throw err;
+      }
+    }
+
+    /** 轮询消息定时器 ID */
+    let _msgPollTimer = null;
 
     // 严重程度标签颜色（用于记录展示）
     const SEVERITY_MAP = {
@@ -1126,11 +1441,96 @@
         return !!this.getRemindLog()[dateStr];
       },
 
+      // ---- 患者信息 ----
+      getPatient() {
+        return this._read(STORAGE_KEYS.PATIENT, null);
+      },
+      savePatient(data) {
+        return this._write(STORAGE_KEYS.PATIENT, data);
+      },
+
+      // ---- 联系药师消息 ----
+      getMessages() {
+        return this._read(STORAGE_KEYS.MESSAGES, { conversations: [] });
+      },
+      saveMessages(data) {
+        return this._write(STORAGE_KEYS.MESSAGES, data);
+      },
+      /** 获取或创建一个患者-药师对话 */
+      getOrCreateConversation(patientId, patientName) {
+        const data = this.getMessages();
+        let conv = data.conversations.find(c => c.patientId === patientId);
+        if (!conv) {
+          conv = {
+            id: 'conv_' + Date.now(),
+            patientName,
+            patientId,
+            lastMessage: '您好，有什么可以帮您？',
+            lastTime: fmtDateTime(new Date()),
+            unread: 0,
+            messages: []
+          };
+          data.conversations.unshift(conv);
+          this.saveMessages(data);
+        }
+        return conv;
+      },
+      /** 发送患者消息，更新对话摘要 */
+      addPatientMessage(convId, content, photo = null, audio = null, duration = null) {
+        const data = this.getMessages();
+        const conv = data.conversations.find(c => c.id === convId);
+        if (!conv) return;
+        const now = new Date();
+        const timeStr = now.toTimeString().slice(0, 5);
+        conv.messages.push({
+          id: 'm_' + Date.now(),
+          from: 'patient',
+          content: content || null,
+          time: timeStr,
+          photo: photo || null,
+          audio: audio || null,
+          duration: duration != null ? duration : null
+        });
+        conv.lastMessage = audio ? '[语音消息]' : (content && content.length > 30 ? content.slice(0, 30) + '…' : (content || ''));
+        conv.lastTime = fmtDateTime(now);
+        this.saveMessages(data);
+        return conv;
+      },
+      /** 添加药师回复（模拟或真实） */
+      addPharmacistMessage(convId, content, photo = null, audio = null, duration = null) {
+        const data = this.getMessages();
+        const conv = data.conversations.find(c => c.id === convId);
+        if (!conv) return;
+        const now = new Date();
+        const timeStr = now.toTimeString().slice(0, 5);
+        conv.messages.push({
+          id: 'm_' + Date.now(),
+          from: 'pharmacist',
+          content: content || null,
+          time: timeStr,
+          photo: photo || null,
+          audio: audio || null,
+          duration: duration != null ? duration : null
+        });
+        conv.lastMessage = audio ? '[语音消息]' : (content && content.length > 30 ? content.slice(0, 30) + '…' : (content || ''));
+        conv.lastTime = fmtDateTime(now);
+        conv.unread = (conv.unread || 0) + 1;
+        this.saveMessages(data);
+        return conv;
+      },
+      /** 标记对话已读 */
+      markConversationRead(convId) {
+        const data = this.getMessages();
+        const conv = data.conversations.find(c => c.id === convId);
+        if (conv) { conv.unread = 0; this.saveMessages(data); }
+      },
+
       // ---- 导出全部数据 ----
       exportAll() {
         return {
           version: '1.0',
           exportTime: fmtDateTime(new Date()),
+          patient: this.getPatient(),
           medications: this.getMedications(),
           reports: this.getReports(),
           settings: this.getSettings()
@@ -1152,13 +1552,17 @@
         home:     { title: '今日用药',     render: renderHome },
         calendar: { title: '用药日历',     render: renderCalendar },
         report:   { title: '不良反应上报', render: renderReport },
-        profile:  { title: '我的',         render: renderProfile }
+        profile:  { title: '我的',         render: renderProfile },
+        chat:     { title: '联系药师',     render: renderChat }
       },
 
       /** 根据 hash 解析路由名 */
       parse() {
         const h = location.hash || '#/home';
         const name = h.replace('#/', '').split('/')[0];
+        // 支持 #/chat/conv_xxx 格式，提取子路由参数
+        const parts = h.replace('#/', '').split('/');
+        this._subRoute = parts[1] || null; // e.g. 'conv_xxx'
         return this.routes[name] ? name : 'home';
       },
 
@@ -1190,14 +1594,16 @@
      * ---------------------------------------------------------- */
     const Modal = {
       /** 打开一个底部弹出模态框，content 为 HTML 字符串 */
-      open(title, contentHtml, onMount) {
+      open(title, contentHtml, onMount, options = {}) {
+        const { showClose = true, maskClose = true } = options;
+        const closeBtnHtml = showClose ? '<button class="close" id="modal-close">✕</button>' : '';
         const root = document.getElementById('modal-root');
         root.innerHTML = `
           <div class="modal-mask" id="modal-mask">
             <div class="modal-sheet" id="modal-sheet">
               <div class="modal-header">
                 <div class="title">${esc(title)}</div>
-                <button class="close" id="modal-close">✕</button>
+                ${closeBtnHtml}
               </div>
               <div class="modal-body">${contentHtml}</div>
             </div>
@@ -1205,10 +1611,12 @@
         `;
         // 关闭事件
         const close = () => Modal.close();
-        document.getElementById('modal-close').addEventListener('click', close);
-        document.getElementById('modal-mask').addEventListener('click', e => {
-          if (e.target.id === 'modal-mask') close();
-        });
+        if (showClose) document.getElementById('modal-close').addEventListener('click', close);
+        if (maskClose) {
+          document.getElementById('modal-mask').addEventListener('click', e => {
+            if (e.target.id === 'modal-mask') close();
+          });
+        }
         if (typeof onMount === 'function') onMount();
       },
       close() {
@@ -1260,8 +1668,8 @@
           </div>
         </div>
 
-        ${meds.length === 0 || todayMeds.length === 0 ? '' : `
-          <button class="fab" id="fab-add">＋ 添加药品</button>
+        ${meds.length === 0 ? '' : `
+          <button class="add-med-btn" id="fab-add">＋ 添加药品</button>
         `}
       `;
 
@@ -1316,6 +1724,7 @@
             <div class="emoji">💊</div>
             <div class="tip">还没有添加药品</div>
             <div class="sub">点击下方按钮添加您的第一个药品</div>
+            <button class="btn-primary" style="margin-top:16px;width:100%;" onclick="openAddMedModal()">＋ 添加药品</button>
           </div>
         `;
       }
@@ -1329,7 +1738,7 @@
     }
 
     /** 处理打卡 */
-    function handleCheckin(medId, dateStr) {
+    async function handleCheckin(medId, dateStr) {
       const meds = Storage.getMedications();
       const med = meds.find(m => m.id === medId);
       if (!med) return;
@@ -1344,7 +1753,11 @@
         }
       } else {
         const now = new Date();
-        Storage.addCheckinLog(medId, dateStr, fmtDateTime(now));
+        const checkTime = fmtDateTime(now);
+        try {
+          await apiFetch(`/api/medications/${medId}/checkin`, { method: 'POST' });
+        } catch (e) { /* 网络失败不影响本地 */ }
+        Storage.addCheckinLog(medId, dateStr, checkTime);
         toast(`✓ ${med.name} 已打卡`);
         Router.render();
       }
@@ -1361,7 +1774,14 @@
       const html = `
         <div class="form-field">
           <label>药品名称 *</label>
-          <input type="text" id="med-name" placeholder="如：硝苯地平控释片" maxlength="40" />
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="med-name" placeholder="如：硝苯地平控释片" maxlength="40" style="flex:1;" />
+            <button type="button" class="btn btn-secondary" id="btn-scan" style="white-space:nowrap;flex-shrink:0;">📷 拍照识别</button>
+          </div>
+          <div id="scan-preview" style="display:none;margin-top:8px;text-align:center;">
+            <img id="scan-img" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--border);" />
+            <div id="scan-status" style="font-size:12px;color:var(--text-tertiary);margin-top:4px;"></div>
+          </div>
         </div>
         <div class="form-field">
           <label>剂量 *</label>
@@ -1384,6 +1804,8 @@
           <button class="btn btn-secondary" id="btn-cancel">取消</button>
           <button class="btn btn-primary" id="btn-save">保存</button>
         </div>
+        <!-- 隐藏的文件input -->
+        <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;" />
       `;
 
       Modal.open('添加药品', html, () => {
@@ -1403,7 +1825,120 @@
 
         document.getElementById('btn-cancel').addEventListener('click', () => Modal.close());
         document.getElementById('btn-save').addEventListener('click', saveMedication);
+
+        // 拍照识别按钮
+        document.getElementById('btn-scan').addEventListener('click', () => {
+          document.getElementById('camera-input').click();
+        });
+        document.getElementById('camera-input').addEventListener('change', async e => {
+          const file = e.target.files[0];
+          if (!file) return;
+          await scanMedicationImage(file);
+          e.target.value = '';
+        });
       });
+    }
+
+    /* ----------------------------------------------------------
+     * 7b. 拍照 OCR 识别药品信息
+     * ---------------------------------------------------------- */
+    async function scanMedicationImage(file) {
+      const preview = document.getElementById('scan-preview');
+      const img     = document.getElementById('scan-img');
+      const status  = document.getElementById('scan-status');
+      const nameInput  = document.getElementById('med-name');
+      const dosageInput = document.getElementById('med-dosage');
+
+      // 显示预览
+      img.src = URL.createObjectURL(file);
+      preview.style.display = 'block';
+      status.textContent = '🔄 正在识别药盒文字，请稍候…';
+
+      try {
+        // Tesseract OCR（中文+英文）
+        const result = await Tesseract.recognize(file, 'eng+chi_sim', {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              status.textContent = `🔄 识别中… ${Math.round(m.progress * 100)}%`;
+            }
+          }
+        });
+        const text = result.data.text.trim();
+        console.log('OCR原始识别结果：', text);
+        status.textContent = '✅ 识别完成，正在解析…';
+
+        if (!text) {
+          status.textContent = '⚠️ 未识别到文字，请手动输入';
+          return;
+        }
+
+        // 从识别文字中提取结构化信息
+        const parsed = parseMedicationText(text);
+        if (parsed.name) nameInput.value = parsed.name;
+        if (parsed.dosage) dosageInput.value = parsed.dosage;
+
+        const filled = Object.values(parsed).filter(Boolean).join(' | ');
+        status.textContent = `✅ 完成${filled ? '，已填入：' + filled : ''}`;
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = '❌ 识别失败：' + err.message;
+      }
+    }
+
+    /**
+     * 从 OCR 识别的文字中提取药品结构化信息
+     * 思路：找药名、剂量规格、用法用量三个区块
+     */
+    function parseMedicationText(text) {
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      const result = { name: '', dosage: '' };
+
+      // 常见剂量/规格关键词
+      const dosage_kw = ['mg', 'ml', 'μg', 'g', '片', '粒', '颗', '支', '瓶',
+                         '剂量', '规格', '用法', '口服', '每次', '一天', '每日',
+                         '早餐', '午餐', '晚餐', '睡前', '顿服'];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // 找药名（第一个不含剂量关键词的较长行）
+        if (!result.name && line.length >= 2 && line.length <= 30) {
+          const hasKw = dosage_kw.some(k => line.includes(k));
+          if (!hasKw) {
+            // 过滤掉明显不是药名的短句
+            const skip = ['生产', '厂家', '批号', '有效期', '国药准字',
+                          '注意事项', '禁忌', '贮藏', '包装', '电话', '地址',
+                          '请在', '本品为', '商品', '专利', '发明'];
+            if (!skip.some(s => line.includes(s))) {
+              result.name = line.replace(/[|\\]/g, '').trim();
+            }
+          }
+        }
+
+        // 找剂量规格（带单位的行）
+        if (!result.dosage) {
+          const doseMatch = line.match(
+            /(\d+(?:\.\d+)?)\s*(mg|ml|μg|g|微克|毫克|克|片|粒|颗|支)\b/i
+          );
+          if (doseMatch) {
+            result.dosage = doseMatch[0];
+            // 追加上下文的用法信息
+            if (i + 1 < lines.length && (lines[i+1].includes('口服') || lines[i+1].includes('每日') || lines[i+1].includes('每次'))) {
+              result.dosage += ' ' + lines[i+1];
+            }
+          }
+        }
+      }
+
+      // 兜底：整段提取
+      if (!result.name) {
+        const allText = lines.join('\n');
+        const match = allText.match(/([\u4e00-\u9fa5]{2,15})(?:片|胶囊|缓释片|控释片|注射液|口服液)/);
+        if (match) result.name = match[0];
+      }
+
+      return result;
     }
 
     function saveMedication() {
@@ -1428,11 +1963,26 @@
         createTime: fmtDateTime(new Date())
       };
 
-      if (Storage.addMedication(med)) {
+      // 优先调 API，失败则只用本地存储
+      apiFetch('/api/medications', {
+        method: 'POST',
+        body: JSON.stringify({ name, dosage, time, schedule })
+      }).then(saved => {
+        // 用服务器返回的 ID 覆盖本地生成的临时 ID
+        if (saved && saved.id) {
+          med.id = saved.id;
+        }
+        Storage.addMedication(med);
         toast('已添加');
         Modal.close();
         Router.render();
-      }
+      }).catch(() => {
+        // 网络失败，但药品仍存入本地
+        Storage.addMedication(med);
+        toast('已添加（离线模式）');
+        Modal.close();
+        Router.render();
+      });
     }
 
     /* ----------------------------------------------------------
@@ -1744,7 +2294,7 @@
       });
 
       // 提交
-      document.getElementById('btn-submit').addEventListener('click', () => {
+      document.getElementById('btn-submit').addEventListener('click', async () => {
         const symptoms = Array.from(selectedSymptoms);
         const desc = document.getElementById('report-desc').value.trim();
 
@@ -1761,18 +2311,25 @@
           submitTime: fmtDateTime(new Date())
         };
 
-        if (Storage.addReport(report)) {
+        try {
+          await apiFetch('/api/adverse-reports', {
+            method: 'POST',
+            body: JSON.stringify({ symptoms, severity, description })
+          });
           toast('✓ 已提交');
-          // 重置表单
-          selectedSymptoms.clear();
-          selectedSeverity = null;
-          photoData = null;
-          document.getElementById('report-desc').value = '';
-          document.querySelectorAll('.symptom-chip').forEach(c => c.classList.remove('active'));
-          document.querySelectorAll('.severity-item').forEach(c => c.classList.remove('active'));
-          resetUploadBox();
-          Router.render();
+        } catch (e) {
+          toast('✓ 已提交（离线模式）');
         }
+        Storage.addReport(report);
+        // 重置表单
+        selectedSymptoms.clear();
+        selectedSeverity = null;
+        photoData = null;
+        document.getElementById('report-desc').value = '';
+        document.querySelectorAll('.symptom-chip').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.severity-item').forEach(c => c.classList.remove('active'));
+        resetUploadBox();
+        Router.render();
       });
     }
 
@@ -1824,21 +2381,61 @@
      * ---------------------------------------------------------- */
     function renderProfile(root) {
       const settings = Storage.getSettings();
+      const patient = Storage.getPatient();
+
+      // 计算 BMI
+      let bmiInfo = '';
+      if (patient && patient.height && patient.weight) {
+        const h = parseFloat(patient.height) / 100;
+        const w = parseFloat(patient.weight);
+        if (h > 0) {
+          const bmi = (w / (h * h)).toFixed(1);
+          bmiInfo = `BMI ${bmi}`;
+        }
+      }
+
+      const patientCard = patient ? `
+        <div class="card mt-16">
+          <div class="card-title">👤 患者信息</div>
+          <div style="font-size:13px;line-height:2;color:var(--text-secondary);">
+            <div style="display:flex;justify-content:space-between;">
+              <span>姓名</span><span style="color:var(--text-primary);font-weight:500;">${esc(patient.name||'--')}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span>性别</span><span style="color:var(--text-primary);">${esc(patient.sex||'--')}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span>年龄</span><span style="color:var(--text-primary);">${esc(patient.age||'--')} 岁</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span>电话</span><span style="color:var(--text-primary);">${esc(patient.phone||'--')}</span>
+            </div>
+            ${patient.height || patient.weight ? `<div style="display:flex;justify-content:space-between;"><span>身高/体重</span><span style="color:var(--text-primary);">${esc(patient.height||'--')}cm / ${esc(patient.weight||'--')}kg${bmiInfo ? ' ('+bmiInfo+')' : ''}</span></div>` : ''}
+            ${patient.edu ? `<div style="display:flex;justify-content:space-between;"><span>教育水平</span><span style="color:var(--text-primary);">${esc(patient.edu)}</span></div>` : ''}
+          </div>
+          ${(patient.diseases&&patient.diseases.length>0) ? `
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:6px;">既往病史</div>
+            ${patient.diseases.map(d=>`<span style="display:inline-block;background:var(--primary-light);color:var(--primary);padding:2px 8px;border-radius:4px;font-size:12px;margin:2px;">${esc(d.name)} ${d.years}年</span>`).join('')}
+          </div>` : ''}
+          ${(patient.allergies&&patient.allergies.length>0) ? `
+          <div style="margin-top:8px;">
+            <div style="font-size:12px;color:var(--warning);margin-bottom:4px;">过敏史</div>
+            ${patient.allergies.map(a=>`<span style="display:inline-block;background:var(--warning-light);color:var(--warning);padding:2px 8px;border-radius:4px;font-size:12px;margin:2px;">${esc(a)}</span>`).join('')}
+          </div>` : ''}
+          <button class="btn btn-secondary" id="btn-edit-patient" style="margin-top:12px;width:100%;font-size:13px;">✏️ 编辑信息</button>
+        </div>
+      ` : '';
 
       const html = `
         <div class="page">
-          <div class="pharmacist-card">
-            <div class="pharmacist-avatar">👨‍⚕️</div>
-            <div class="pharmacist-info">
-              <div class="name">${esc(PHARMACIST.name)}</div>
-              <div class="dept">${esc(PHARMACIST.dept)}</div>
-              <div class="hospital">${esc(PHARMACIST.hospital)}</div>
-            </div>
+          ${patientCard}
+          <div class="card mt-16">
+            <div class="card-title">💬 联系药师</div>
+            <button class="contact-btn" id="btn-contact">
+              联系药师（电话：${esc(PHARMACIST.phone)}）
+            </button>
           </div>
-
-          <button class="contact-btn" id="btn-contact">
-            💬 联系药师（电话：${esc(PHARMACIST.phone)}）
-          </button>
 
           <div class="card mt-16">
             <div class="card-title">⏰ 复诊提醒</div>
@@ -1877,7 +2474,7 @@
               <div>应用名称：患者用药管理</div>
               <div>开发单位：青岛市市立医院 临床药学科</div>
               <div>药师：孙药师</div>
-              <div>版本：v1.0.0</div>
+              <div>版本：v1.1.0</div>
             </div>
           </div>
         </div>
@@ -1885,10 +2482,14 @@
 
       root.innerHTML = html;
 
-      // 联系药师：尝试拉起微信；否则弹出提示
+      // 编辑患者信息
+      document.getElementById('btn-edit-patient')?.addEventListener('click', () => {
+        _onboardStep = 0;
+        showOnboardStep(0);
+      });
+
+      // 联系药师
       document.getElementById('btn-contact').addEventListener('click', () => {
-        // 企业内可替换为： location.href = 'weixin://';
-        // 这里直接拨打科室电话
         if (confirm(`将拨打药师电话 ${PHARMACIST.phone}，是否继续？`)) {
           location.href = `tel:${PHARMACIST.phone}`;
         }
@@ -2023,7 +2624,702 @@
     }
 
     /* ----------------------------------------------------------
-     * 12. PWA 注册（Service Worker）
+     * 12. 患者首次使用向导
+     * ---------------------------------------------------------- */
+    let _onboardStep = 0;
+    const _onboardSteps = ['基本信息', '既往病史', '用药史', '过敏史', '体格信息'];
+
+    /** 检查是否需要引导，必要时弹出向导 */
+    function checkPatientOnboarding() {
+      const patient = Storage.getPatient();
+      if (!patient) {
+        _onboardStep = 0;
+        showOnboardStep(0);
+      }
+    }
+
+    /** 渲染某一步的表单内容 */
+    function getOnboardStepContent(step, data = {}) {
+      if (step === 0) {
+        return `
+          <div class="form-field">
+            <label>姓名 *</label>
+            <input type="text" id="o-name" placeholder="请输入您的姓名" value="${esc(data.name||'')}" maxlength="20" />
+          </div>
+          <div class="form-field">
+            <label>性别 *</label>
+            <div class="radio-group">
+              <label class="radio-label"><input type="radio" name="o-sex" value="男" ${(data.sex||'')==='男'?'checked':''}> 男</label>
+              <label class="radio-label"><input type="radio" name="o-sex" value="女" ${(data.sex||'')==='女'?'checked':''}> 女</label>
+            </div>
+          </div>
+          <div class="form-field">
+            <label>年龄 *</label>
+            <input type="number" id="o-age" placeholder="请输入年龄（岁）" value="${esc(data.age||'')}" min="1" max="120" />
+          </div>
+          <div class="form-field">
+            <label>联系电话 *</label>
+            <input type="tel" id="o-phone" placeholder="手机号码或座机" value="${esc(data.phone||'')}" maxlength="20" />
+          </div>
+        `;
+      }
+      if (step === 1) {
+        const diseases = data.diseases || [{ name: '', years: '' }];
+        const rows = diseases.map((d, i) => `
+          <div class="disease-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+            <input type="text" class="d-name" placeholder="病名（如：高血压）" value="${esc(d.name||'')}" style="flex:2;" />
+            <input type="number" class="d-years" placeholder="患病年限" value="${esc(d.years||'')}" min="0" style="flex:1;" />
+            <span style="font-size:12px;color:var(--text-tertiary);white-space:nowrap;">年</span>
+          </div>
+        `).join('');
+        return `
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">请填写您目前仍在治疗或控制的慢性病</div>
+          <div id="disease-list">${rows}</div>
+          <button type="button" class="btn btn-secondary" id="btn-add-disease" style="margin-top:8px;font-size:13px;">＋ 添加病史</button>
+        `;
+      }
+      if (step === 2) {
+        const meds = data.medHistory || [{ name: '', dosage: '', reason: '' }];
+        const rows = meds.map((m, i) => `
+          <div class="medhist-row" style="margin-bottom:12px;padding:10px;background:var(--bg);border-radius:8px;">
+            <input type="text" class="mh-name" placeholder="药名" value="${esc(m.name||'')}" style="width:100%;margin-bottom:6px;" />
+            <input type="text" class="mh-dosage" placeholder="剂量/用法（如：1片 tid）" value="${esc(m.dosage||'')}" style="width:100%;margin-bottom:6px;" />
+            <input type="text" class="mh-reason" placeholder="服用原因" value="${esc(m.reason||'')}" style="width:100%;" />
+          </div>
+        `).join('');
+        return `
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">请填写您曾经或正在使用的药物（非本次治疗用药）</div>
+          <div id="medhist-list">${rows}</div>
+          <button type="button" class="btn btn-secondary" id="btn-add-medhist" style="margin-top:8px;font-size:13px;">＋ 添加用药史</button>
+        `;
+      }
+      if (step === 3) {
+        const alls = data.allergies || [''];
+        const items = alls.map((a, i) => `
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input type="text" class="allergy-item" placeholder="过敏物质（如：青霉素）或" value="${esc(a||'')}" style="flex:1;" />
+          </div>
+        `).join('');
+        return `
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">如有药物或食物过敏史请填写，无则留空</div>
+          <div id="allergy-list">${items}</div>
+          <button type="button" class="btn btn-secondary" id="btn-add-allergy" style="margin-top:8px;font-size:13px;">＋ 添加过敏史</button>
+        `;
+      }
+      if (step === 4) {
+        return `
+          <div class="form-field">
+            <label>教育水平</label>
+            <select id="o-edu" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:white;">
+              <option value="">请选择</option>
+              <option value="小学及以下" ${(data.edu||'')==='小学及以下'?'selected':''}>小学及以下</option>
+              <option value="初中" ${(data.edu||'')==='初中'?'selected':''}>初中</option>
+              <option value="高中/中专" ${(data.edu||'')==='高中/中专'?'selected':''}>高中/中专</option>
+              <option value="大专/高职" ${(data.edu||=''=='')=='大专/高职'?'selected':''}>大专/高职</option>
+              <option value="本科" ${(data.edu||'')==='本科'?'selected':''}>本科</option>
+              <option value="硕士及以上" ${(data.edu||'')==='硕士及以上'?'selected':''}>硕士及以上</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>身高（cm）</label>
+            <input type="number" id="o-height" placeholder="如：170" value="${esc(data.height||'')}" min="50" max="250" />
+          </div>
+          <div class="form-field">
+            <label>体重（kg）</label>
+            <input type="number" id="o-weight" placeholder="如：65" value="${esc(data.weight||'')}" min="20" max="300" />
+          </div>
+        `;
+      }
+    }
+
+    /** 收集某一步的数据 */
+    function collectOnboardStepData(step) {
+      if (step === 0) {
+        return {
+          name: document.getElementById('o-name').value.trim(),
+          sex: document.querySelector('input[name="o-sex"]:checked')?.value || '',
+          age: document.getElementById('o-age').value.trim(),
+          phone: document.getElementById('o-phone').value.trim()
+        };
+      }
+      if (step === 1) {
+        const rows = document.querySelectorAll('#disease-list .disease-row');
+        const diseases = Array.from(rows).map(r => ({
+          name: r.querySelector('.d-name').value.trim(),
+          years: r.querySelector('.d-years').value.trim()
+        })).filter(d => d.name);
+        return { diseases };
+      }
+      if (step === 2) {
+        const rows = document.querySelectorAll('#medhist-list .medhist-row');
+        const medHistory = Array.from(rows).map(r => ({
+          name: r.querySelector('.mh-name').value.trim(),
+          dosage: r.querySelector('.mh-dosage').value.trim(),
+          reason: r.querySelector('.mh-reason').value.trim()
+        })).filter(m => m.name);
+        return { medHistory };
+      }
+      if (step === 3) {
+        const items = Array.from(document.querySelectorAll('#allergy-list .allergy-item'))
+          .map(i => i.value.trim()).filter(Boolean);
+        return { allergies: items };
+      }
+      if (step === 4) {
+        return {
+          edu: document.getElementById('o-edu').value,
+          height: document.getElementById('o-height').value.trim(),
+          weight: document.getElementById('o-weight').value.trim()
+        };
+      }
+    }
+
+    /** 显示向导第几步 */
+    function showOnboardStep(step) {
+      const existing = Storage.getPatient() || {};
+      const savedData = { ...existing };
+      const stepTitles = ['基本信息', '既往病史', '用药史', '过敏史', '体格信息'];
+      const stepCount = stepTitles.length;
+
+      const html = `
+        <div style="padding:0 0 8px 0;">
+          <div style="display:flex;gap:4px;margin-bottom:16px;">
+            ${stepTitles.map((t, i) => `
+              <div style="flex:1;height:3px;border-radius:2px;background:${i<=step?'var(--primary)':'var(--border)'}"></div>
+            `).join('')}
+          </div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+            步骤 ${step + 1}/${stepCount}：${stepTitles[step]}
+          </div>
+          <div id="onboard-fields">${getOnboardStepContent(step, savedData)}</div>
+        </div>
+        <div class="modal-actions">
+          ${step > 0 ? '<button class="btn btn-secondary" id="o-btn-prev">上一步</button>' : '<div></div>'}
+          <button class="btn btn-primary" id="o-btn-next">${step < stepCount - 1 ? '下一步' : '完成'}</button>
+        </div>
+      `;
+
+      Modal.open('完善患者信息', html, null, { showClose: false, maskClose: false });
+
+      // 动态添加行按钮
+      if (step === 1) {
+        document.getElementById('btn-add-disease')?.addEventListener('click', () => {
+          const list = document.getElementById('disease-list');
+          const row = document.createElement('div');
+          row.className = 'disease-row';
+          row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center;';
+          row.innerHTML = `
+            <input type="text" class="d-name" placeholder="病名（如：高血压）" style="flex:2;" />
+            <input type="number" class="d-years" placeholder="患病年限" min="0" style="flex:1;" />
+            <span style="font-size:12px;color:var(--text-tertiary);white-space:nowrap;">年</span>
+          `;
+          list.appendChild(row);
+        });
+      }
+      if (step === 2) {
+        document.getElementById('btn-add-medhist')?.addEventListener('click', () => {
+          const list = document.getElementById('medhist-list');
+          const row = document.createElement('div');
+          row.className = 'medhist-row';
+          row.style.cssText = 'margin-bottom:12px;padding:10px;background:var(--bg);border-radius:8px;';
+          row.innerHTML = `
+            <input type="text" class="mh-name" placeholder="药名" style="width:100%;margin-bottom:6px;" />
+            <input type="text" class="mh-dosage" placeholder="剂量/用法（如：1片 tid）" style="width:100%;margin-bottom:6px;" />
+            <input type="text" class="mh-reason" placeholder="服用原因" style="width:100%;" />
+          `;
+          list.appendChild(row);
+        });
+      }
+      if (step === 3) {
+        document.getElementById('btn-add-allergy')?.addEventListener('click', () => {
+          const list = document.getElementById('allergy-list');
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;';
+          row.innerHTML = `<input type="text" class="allergy-item" placeholder="过敏物质" style="flex:1;" />`;
+          list.appendChild(row);
+        });
+      }
+
+      // 上一步
+      document.getElementById('o-btn-prev')?.addEventListener('click', () => {
+        _onboardStep = step - 1;
+        showOnboardStep(_onboardStep);
+      });
+
+      // 下一步/完成
+      document.getElementById('o-btn-next').addEventListener('click', async () => {
+        const stepData = collectOnboardStepData(step);
+        // 合并到已保存数据
+        const merged = { ...(Storage.getPatient() || {}), ...stepData };
+        Storage.savePatient(merged);
+
+        if (step < stepCount - 1) {
+          _onboardStep = step + 1;
+          showOnboardStep(_onboardStep);
+        } else {
+          // 完成：注册 + 登录
+          try {
+            toast('正在注册…');
+            const registerData = {
+              phone: merged.phone,
+              password: '12345',
+              name: merged.name,
+              sex: merged.sex,
+              age: merged.age,
+              diseases: merged.diseases || [],
+              allergies: merged.allergies || [],
+              height: merged.height || '',
+              weight: merged.weight || '',
+              edu: merged.edu || ''
+            };
+            await apiFetch('/api/patient/register', {
+              method: 'POST',
+              body: JSON.stringify(registerData)
+            });
+            // 注册成功后再登录
+            const loginData = await apiFetch('/api/patient/login', {
+              method: 'POST',
+              body: JSON.stringify({ phone: merged.phone, password: '12345' })
+            });
+            localStorage.setItem('pma_token', loginData.token);
+            localStorage.setItem('pma_patient_id', loginData.patient_id);
+            Modal.close();
+            toast('✓ 注册成功，已自动登录');
+            Router.render();
+          } catch (err) {
+            // 注册失败（可能已注册过），尝试直接登录
+            try {
+              const loginData = await apiFetch('/api/patient/login', {
+                method: 'POST',
+                body: JSON.stringify({ phone: merged.phone, password: '12345' })
+              });
+              localStorage.setItem('pma_token', loginData.token);
+              localStorage.setItem('pma_patient_id', loginData.patient_id);
+              Modal.close();
+              toast('✓ 登录成功');
+              Router.render();
+            } catch (e2) {
+              toast('注册/登录失败，请检查网络');
+            }
+          }
+        }
+      });
+    }
+
+    /* ----------------------------------------------------------
+     * 11. 联系药师 - 渲染消息列表或对话详情
+     * ---------------------------------------------------------- */
+    function renderChat(root) {
+      const sub = Router._subRoute;
+      if (sub && sub.startsWith('conv_')) {
+        renderChatDetail(root, sub);
+      } else {
+        renderChatList(root);
+      }
+    }
+
+    /** 渲染药师消息列表（会话列表） */
+    async function renderChatList(root) {
+      const patient = Storage.getPatient();
+      const patientName = patient ? (patient.name || '我的') : '我的';
+      const patientId = patient ? (patient.id || 'p001') : 'p001';
+
+      // 停止之前的轮询
+      if (_msgPollTimer) { clearInterval(_msgPollTimer); _msgPollTimer = null; }
+
+      // 尝试从 API 获取消息
+      try {
+        const msgs = await apiFetch('/api/messages');
+        if (msgs && msgs.conversations) {
+          Storage.saveMessages(msgs);
+        } else if (Array.isArray(msgs)) {
+          // 兼容：如果是数组格式
+          Storage.saveMessages({ conversations: msgs });
+        }
+      } catch (e) {
+        console.warn('获取消息列表失败，使用本地缓存', e);
+      }
+
+      // 确保有一条默认对话
+      const conv = Storage.getOrCreateConversation(patientId, patientName);
+      const data = Storage.getMessages();
+
+      // 计算未读总数
+      const totalUnread = data.conversations.reduce((s, c) => s + (c.unread || 0), 0);
+
+      let html = `
+        <div class="page" style="padding:0;">
+          <div style="padding:12px 16px;background:var(--primary);color:#fff;">
+            <div style="font-size:14px;opacity:0.9;">${esc(PHARMACIST.hospital)}</div>
+            <div style="font-size:16px;font-weight:600;margin-top:4px;">💬 联系药师</div>
+            <div style="font-size:12px;opacity:0.85;margin-top:6px;">
+              药师：${esc(PHARMACIST.name)} · ${esc(PHARMACIST.dept)}
+            </div>
+          </div>
+          ${totalUnread > 0 ? `<div class="pharmacist-reply-hint">📬 您有 ${totalUnread} 条未读回复</div>` : ''}
+          <ul class="chat-list">
+      `;
+
+      data.conversations.forEach(c => {
+        const timeLabel = formatRelativeTime(c.lastTime);
+        const hasUnread = (c.unread || 0) > 0;
+        html += `
+          <li class="chat-list-item" data-conv-id="${esc(c.id)}">
+            <div class="chat-avatar ${hasUnread ? 'has-unread' : ''}">💊</div>
+            <div class="chat-info">
+              <div class="chat-info-top">
+                <span class="chat-name">${esc(c.patientName)}</span>
+                <span class="chat-time">${esc(timeLabel)}</span>
+              </div>
+              <div class="chat-preview">${esc(c.lastMessage || '')}</div>
+            </div>
+            ${hasUnread ? '<div class="unread-dot"></div>' : ''}
+          </li>
+        `;
+      });
+
+      html += '</ul></div>';
+
+      root.innerHTML = html;
+
+      // 点击进入对话
+      root.querySelectorAll('.chat-list-item').forEach(item => {
+        item.addEventListener('click', () => {
+          location.hash = '#/chat/' + item.dataset.convId;
+        });
+      });
+
+      // 10 秒轮询新消息
+      _msgPollTimer = setInterval(async () => {
+        try {
+          const msgs = await apiFetch('/api/messages');
+          if (msgs && msgs.conversations) {
+            Storage.saveMessages(msgs);
+            // 重新渲染列表（如果还在聊天列表页）
+            if (location.hash === '#/chat' || location.hash.startsWith('#/chat')) {
+              renderChatList(document.getElementById('page-root'));
+            }
+          }
+        } catch (e) {
+          // 轮询失败不提示，避免刷屏
+        }
+      }, 10000);
+    }
+
+    /** 渲染对话详情页 */
+    async function renderChatDetail(root, convId) {
+      // 停止之前的轮询
+      if (_msgPollTimer) { clearInterval(_msgPollTimer); _msgPollTimer = null; }
+
+      // 尝试从 API 获取消息
+      try {
+        const msgs = await apiFetch('/api/messages');
+        if (msgs && msgs.conversations) {
+          Storage.saveMessages(msgs);
+        }
+      } catch (e) {
+        console.warn('获取消息详情失败，使用本地缓存', e);
+      }
+
+      const data = Storage.getMessages();
+      const conv = data.conversations.find(c => c.id === convId);
+      if (!conv) {
+        root.innerHTML = '<div class="page"><p style="text-align:center;color:var(--text-tertiary);padding:40px;">对话不存在</p></div>';
+        return;
+      }
+
+      // 标记已读
+      Storage.markConversationRead(convId);
+
+      // 构建药师信息
+      const pharmacistLabel = `${esc(PHARMACIST.name)} · ${esc(PHARMACIST.dept)}`;
+
+      // 生成消息气泡 HTML
+      const msgsHtml = conv.messages.map(m => buildMessageBubble(m)).join('');
+      const patient = Storage.getPatient();
+      const myName = patient ? (patient.name || '我') : '我';
+
+      let html = `
+        <div style="display:flex;flex-direction:column;height:calc(100vh - var(--header-height) - var(--tab-height) - var(--safe-bottom));">
+          <!-- 顶部返回栏 -->
+          <div class="chat-detail-header">
+            <button class="chat-back-btn" id="chat-back">← 返回</button>
+            <div class="chat-header-info">
+              <div class="chat-header-name">${esc(PHARMACIST.name)}</div>
+              <div class="chat-header-sub">${pharmacistLabel}</div>
+            </div>
+            <div style="font-size:12px;color:var(--text-tertiary);">${pharmacistLabel}</div>
+          </div>
+
+          <!-- 消息区域 -->
+          <div class="chat-messages" id="chat-msgs">
+            ${msgsHtml || '<div style="text-align:center;color:var(--text-tertiary);padding:20px;font-size:13px;">暂无消息，向药师发起提问吧</div>'}
+          </div>
+
+          <!-- 底部输入栏 -->
+          <div class="chat-input-bar">
+            <button class="chat-camera-btn" id="chat-camera" title="拍照">📷</button>
+            <input type="file" id="chat-photo-input" accept="image/*" capture="environment" style="display:none;" />
+            <input type="text" class="chat-input" id="chat-input" placeholder="输入问题…" />
+            <button class="chat-mic-btn" id="chat-mic" title="语音">🎤</button>
+            <button class="chat-send-btn" id="chat-send" disabled>➤</button>
+          </div>
+          <!-- 录音提示 -->
+          <div class="recording-hint" id="recording-hint">
+            <span class="dot"></span>录音中… <span id="recording-time">0:00</span>
+          </div>
+        </div>
+      `;
+
+      root.innerHTML = html;
+
+      // 返回按钮
+      document.getElementById('chat-back').addEventListener('click', () => {
+        location.hash = '#/chat';
+      });
+
+      // 发送按钮状态
+      const input = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('chat-send');
+      input.addEventListener('input', () => {
+        sendBtn.disabled = !input.value.trim();
+      });
+
+      // 发送消息
+      sendBtn.addEventListener('click', () => doSendMessage(convId, input, sendBtn));
+
+      // 回车发送
+      input.addEventListener('keypress', e => {
+        if (e.key === 'Enter' && input.value.trim()) {
+          doSendMessage(convId, input, sendBtn);
+        }
+      });
+
+      // 拍照
+      document.getElementById('chat-camera').addEventListener('click', () => {
+        document.getElementById('chat-photo-input').click();
+      });
+
+      document.getElementById('chat-photo-input').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const base64 = ev.target.result;
+          doSendMessage(convId, input, sendBtn, base64);
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+      });
+
+      // ---- 语音录制 ----
+      let mediaRecorder = null;
+      let audioChunks = [];
+      let recordingTimer = null;
+      let recordingSeconds = 0;
+      const MAX_RECORDING_SECONDS = 60;
+
+      const micBtn = document.getElementById('chat-mic');
+      const hint = document.getElementById('recording-hint');
+      const recTime = document.getElementById('recording-time');
+
+      function formatDur(s) {
+        return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+      }
+
+      function startRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+          audioChunks = [];
+          recordingSeconds = 0;
+          const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm');
+          mediaRecorder = new MediaRecorder(stream, { mimeType });
+          mediaRecorder.ondataavailable = ev => { if (ev.data.size > 0) audioChunks.push(ev.data); };
+          mediaRecorder.onstop = () => {
+            stream.getTracks().forEach(t => t.stop());
+            const blob = new Blob(audioChunks, { type: mimeType });
+            const reader = new FileReader();
+            reader.onload = ev2 => {
+              const base64 = ev2.target.result;
+              doSendMessage(convId, input, sendBtn, null, base64, recordingSeconds);
+              micBtn.classList.remove('recording');
+              hint.classList.remove('show');
+              clearInterval(recordingTimer);
+              recTime.textContent = '0:00';
+            };
+            reader.readAsDataURL(blob);
+          };
+          mediaRecorder.start();
+          micBtn.classList.add('recording');
+          hint.classList.add('show');
+          recTime.textContent = formatDur(recordingSeconds);
+          recordingTimer = setInterval(() => {
+            recordingSeconds++;
+            recTime.textContent = formatDur(recordingSeconds);
+            if (recordingSeconds >= MAX_RECORDING_SECONDS) {
+              clearInterval(recordingTimer);
+              if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+            }
+          }, 1000);
+        }).catch(() => {
+          toast('请允许麦克风权限');
+        });
+      }
+
+      micBtn.addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          clearInterval(recordingTimer);
+          if (mediaRecorder) mediaRecorder.stop();
+        } else {
+          startRecording();
+        }
+      });
+
+      // 语音消息点击播放
+      root.querySelectorAll('.msg-audio').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const src = btn.dataset.src;
+          if (!src) return;
+          if (src.startsWith('mock-audio:')) {
+            toast('模拟语音，无法播放');
+            return;
+          }
+          if (btn.classList.contains('playing')) {
+            btn._audio && btn._audio.pause();
+            btn.classList.remove('playing');
+            return;
+          }
+          document.querySelectorAll('.msg-audio.playing').forEach(b => { b.classList.remove('playing'); b._audio && b._audio.pause(); });
+          const audio = new Audio(src);
+          btn._audio = audio;
+          audio.onended = () => btn.classList.remove('playing');
+          audio.onerror = () => { btn.classList.remove('playing'); toast('播放失败'); };
+          audio.play();
+          btn.classList.add('playing');
+        });
+      });
+
+      // 图片点击放大
+      root.querySelectorAll('.msg-photo').forEach(img => {
+        img.addEventListener('click', () => {
+          Modal.open('图片预览', `<img src="${img.src}" style="max-width:100%;border-radius:8px;" />`, null, { showClose: true });
+        });
+      });
+
+      // 滚动到底部
+      const msgsEl = document.getElementById('chat-msgs');
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+
+      // 10 秒轮询药师回复
+      _msgPollTimer = setInterval(async () => {
+        try {
+          const msgs = await apiFetch('/api/messages');
+          if (msgs && msgs.conversations) {
+            Storage.saveMessages(msgs);
+            const updatedConv = msgs.conversations.find(c => c.id === convId);
+            if (updatedConv && updatedConv.messages.length > conv.messages.length) {
+              const newMsgs = updatedConv.messages.slice(conv.messages.length);
+              newMsgs.forEach(m => {
+                msgsEl.innerHTML += buildMessageBubble(m);
+              });
+              msgsEl.scrollTop = msgsEl.scrollHeight;
+            }
+          }
+        } catch (e) {
+          // 轮询失败静默
+        }
+      }, 10000);
+    }
+
+    /** 发送消息核心逻辑 */
+    function doSendMessage(convId, input, sendBtn, photoBase64 = null, audioBase64 = null, audioDuration = null) {
+      const hasContent = (input && (input.value || '').trim());
+      const content = (photoBase64 ? '[图片] ' : '') + (hasContent ? (input.value || '').trim() : '');
+      // 语音消息单独一条，content 为 null
+      if (!content && !photoBase64 && !audioBase64) return;
+
+      // 调用 API 发送消息（不等待，避免阻塞 UI）
+      apiFetch('/api/messages', {
+        method: 'POST',
+        body: JSON.stringify({
+          content: audioBase64 ? null : (hasContent ? (input.value || '').trim() : null),
+          photo: photoBase64 || null,
+          audio: audioBase64 || null,
+          audio_duration: audioDuration
+        })
+      }).catch(() => {
+        // 网络失败时仍保留本地消息
+      });
+
+      Storage.addPatientMessage(convId, audioBase64 ? null : content, photoBase64, audioBase64, audioDuration);
+      if (input) input.value = '';
+      if (sendBtn) sendBtn.disabled = true;
+
+      // 重新渲染消息列表
+      const msgsEl = document.getElementById('chat-msgs');
+      if (msgsEl) {
+        const data = Storage.getMessages();
+        const conv = data.conversations.find(c => c.id === convId);
+        if (conv) {
+          msgsEl.innerHTML = conv.messages.map(m => buildMessageBubble(m)).join('');
+          msgsEl.scrollTop = msgsEl.scrollHeight;
+        }
+      }
+      // 注意：不再有模拟药师回复，药师真实回复通过轮询获取
+    }
+
+    /** 构建单条消息气泡 HTML */
+    function buildMessageBubble(msg) {
+      const isPatient = msg.from === 'patient';
+      const rowClass = isPatient ? 'patient' : 'pharmacist';
+      const avatar = isPatient ? '👤' : '💊';
+      const photoHtml = msg.photo
+        ? `<img class="msg-photo" src="${msg.photo}" alt="图片" />`
+        : '';
+      const audioHtml = msg.audio
+        ? `<button class="msg-audio" data-src="${msg.audio}" title="点击播放"><span class="audio-icon">🎤</span><span class="audio-dur">${msg.duration != null ? (Math.floor(msg.duration / 60) + ':' + String(Math.floor(msg.duration % 60)).padStart(2, '0')) : '0:00'}</span></button>`
+        : '';
+      return `
+        <div class="msg-row ${rowClass}">
+          <div class="msg-avatar">${avatar}</div>
+          <div>
+            ${msg.audio ? audioHtml : `<div class="msg-bubble">${esc(msg.content || '')}</div>`}
+            ${photoHtml}
+            <div class="msg-time">${esc(msg.time || '')}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * 将 ISO 时间字符串转为"刚刚"/"N分钟前"/"今天 HH:mm"
+     */
+    function formatRelativeTime(isoStr) {
+      if (!isoStr) return '';
+      try {
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr;
+        const now = new Date();
+        const diffMs = now - d;
+        const diffMin = Math.floor(diffMs / 60000);
+        if (diffMin < 1) return '刚刚';
+        if (diffMin < 60) return diffMin + '分钟前';
+        // 同一天显示时间
+        if (d.toDateString() === now.toDateString()) {
+          return d.toTimeString().slice(0, 5);
+        }
+        // 昨天
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        if (d.toDateString() === yesterday.toDateString()) {
+          return '昨天 ' + d.toTimeString().slice(0, 5);
+        }
+        return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) + ' ' + d.toTimeString().slice(0, 5);
+      } catch (e) {
+        return isoStr;
+      }
+    }
+
+    /* ----------------------------------------------------------
+     * 13. PWA 注册（Service Worker）
      * ---------------------------------------------------------- */
     function registerSW() {
       if ('serviceWorker' in navigator) {
@@ -2043,13 +3339,34 @@
     /* ----------------------------------------------------------
      * 13. 启动
      * ---------------------------------------------------------- */
-    function bootstrap() {
+    async function bootstrap() {
       // 路由初始化
       Router.init();
       // 注册 Service Worker
       registerSW();
       // 启动提醒循环
       startReminderLoop();
+
+      // Token 验证：检查本地是否有 token，有则验证有效性
+      const token = localStorage.getItem('pma_token');
+      if (token) {
+        try {
+          const profile = await apiFetch('/api/patient/profile');
+          Storage.savePatient(profile);
+          // 加载远程药品数据覆盖本地缓存
+          try {
+            const meds = await apiFetch('/api/medications');
+            Storage.saveMedications(meds || []);
+          } catch (e) { /* 药品加载失败不影响主流程 */ }
+        } catch (e) {
+          // Token 无效，清除并走向导
+          localStorage.removeItem('pma_token');
+          localStorage.removeItem('pma_patient_id');
+        }
+      }
+
+      // 检查患者信息，未完善则弹出向导
+      checkPatientOnboarding();
     }
 
     // DOM 就绪后启动

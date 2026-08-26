@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>药师管理后台 · 青岛市市立医院</title>
+  <style>
+    :root {
+      --primary: #1890FF;
+      --primary-dark: #096DD9;
+      --primary-light: #E6F7FF;
+      --success: #52C41A;
+      --success-light: #F6FFED;
+      --warning: #FF6B6B;
+      --warning-light: #FFF1F0;
+      --bg: #F5F7FA;
+      --card-bg: #FFFFFF;
+      --text-primary: #262626;
+      --text-secondary: #595959;
+      --text-tertiary: #8C8C8C;
+      --border: #F0F0F0;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --radius: 12px;
+      --tab-height: 56px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* 顶部导航 */
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(24,144,255,0.3);
+    }
+    .header-title { font-size: 18px; font-weight: 600; }
+    .header-info { font-size: 13px; opacity: 0.85; }
+    .logout-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* 统计卡片 */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 16px 16px 12px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-item {
+      text-align: center;
+      padding: 12px 8px;
+      background: var(--bg);
+      border-radius: var(--radius);
+    }
+    .stat-num {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .stat-num.warn { color: var(--warning); }
+    .stat-num.ok { color: var(--success); }
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+    }
+
+    /* Tab 导航 */
+    .tab-bar {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 56px;
+      z-index: 99;
+    }
+    .tab-item {
+      flex: 1;
+      text-align: center;
+      padding: 12px 0;
+      font-size: 14px;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-item.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      font-weight: 600;
+    }
+    .tab-item .badge {
+      display: inline-block;
+      background: var(--warning);
+      color: white;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      margin-left: 4px;
+    }
+
+    /* 页面内容 */
+    .page-content { padding: 16px; }
+
+    /* 患者卡片 */
+    .patient-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .patient-card:active { transform: scale(0.98); }
+    .patient-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .patient-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .patient-gender {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-left: 6px;
+    }
+    .patient-age {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+    .adherence-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: var(--success);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    .bar-fill.low { background: var(--warning); }
+    .adherence-text {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      white-space: nowrap;
+    }
+    .patient-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .tag-disease {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+    .tag-allergy {
+      background: var(--warning-light);
+      color: var(--warning);
+    }
+    .patient-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* 患者详情页 */
+    .detail-page { display: none; }
+    .detail-page.active { display: block; }
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--primary);
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 14px;
+    }
+    .detail-section {
+      background: white;
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .info-item label {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      display: block;
+      margin-bottom: 2px;
+    }
+    .info-item span {
+      font-size: 14px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .med-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .med-list-item:last-child { border-bottom: none; }
+    .med-name { font-size: 14px; font-weight: 500; }
+    .med-info { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+    .med-check { text-align: center; min-width: 48px; }
+    .check-ok { color: var(--success); font-size: 20px; }
+    .check-no { color: var(--text-tertiary); font-size: 20px; }
+
+    /* 模态框 */
+    .modal-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-mask.show { display: flex; }
+    .modal-sheet {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .modal-title { font-size: 17px; font-weight: 600; }
+    .modal-close { font-size: 22px; color: var(--text-tertiary); background: none; border: none; cursor: pointer; }
+
+    /* 不良反应工作台 */
+    .report-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--warning);
+    }
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .report-patient { font-size: 15px; font-weight: 600; }
+    .report-time { font-size: 12px; color: var(--text-tertiary); }
+    .severity-badge {
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+    .sev-light { background: #FFF7E6; color: #FA8C16; }
+    .sev-mid { background: var(--warning-light); color: var(--warning); }
+    .sev-sev { background: var(--warning); color: white; }
+    .report-symptoms {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 8px 0;
+    }
+    .symptom-tag {
+      font-size: 12px;
+      background: var(--bg);
+      color: var(--text-secondary);
+      padding: 3px 10px;
+      border-radius: 4px;
+    }
+    .report-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+    .report-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .action-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      border: none;
+    }
+    .action-primary { background: var(--primary); color: white; }
+    .action-secondary { background: var(--bg); color: var(--text-secondary); }
+
+    /* 搜索栏 */
+    .search-bar {
+      padding: 12px 16px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+    }
+    .search-input-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border-radius: 20px;
+      padding: 8px 14px;
+      gap: 8px;
+    }
+    .search-input-wrap input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      outline: none;
+    }
+    .search-input-wrap .icon { font-size: 16px; }
+    .filter-chips {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .filter-chip {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 16px;
+      white-space: nowrap;
+      cursor: pointer;
+      background: var(--bg);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .filter-chip.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* 环形图 */
+    .circle-chart {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: conic-gradient(var(--success) 0deg, var(--success) calc(var(--p) * 1%), var(--bg) calc(var(--p) * 1%));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .circle-inner {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* 指导发送 */
+    .guide-form textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 14px;
+      resize: vertical;
+      min-height: 100px;
+      font-family: inherit;
+      outline: none;
+    }
+    .guide-form textarea:focus { border-color: var(--primary); }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(38,38,38,0.9);
+      color: white;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-size: 14px;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 300;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- 顶部导航 -->
+<div class="header">
+  <div>
+    <div class="header-title" id="header-title">患者管理</div>
+    <div class="header-info" id="header-info">青岛市市立医院 · 临床药学科</div>
+  </div>
+  <button class="logout-btn" id="btn-logout">退出登录</button>
+</div>
+
+<!-- 统计栏 -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-num ok" id="stat-total">0</div>
+    <div class="stat-label">在册患者</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="stat-adherence">--%</div>
+    <div class="stat-label">整体依从性</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num warn" id="stat-report">0</div>
+    <div class="stat-label">待处理上报</div>
+  </div>
+</div>
+
+<!-- Tab 导航 -->
+<div class="tab-bar">
+  <div class="tab-item active" data-tab="patients" onclick="switchTab('patients')">
+    👥 患者<span class="badge" id="tab-patients-badge" style="display:none"></span>
+  </div>
+  <div class="tab-item" data-tab="reports" onclick="switchTab('reports')">
+    ⚠️ 上报<span class="badge" id="tab-report-badge" style="display:none"></span>
+  </div>
+</div>
+
+<!-- 搜索栏 -->
+<div class="search-bar" id="search-bar">
+  <div class="search-input-wrap">
+    <span class="icon">🔍</span>
+    <input type="text" id="search-input" placeholder="搜索患者姓名或电话…" />
+  </div>
+  <div class="filter-chips" id="filter-chips">
+    <div class="filter-chip active" data-filter="all">全部</div>
+    <div class="filter-chip" data-filter="low">依从性低</div>
+    <div class="filter-chip" data-filter="high">依从性高</div>
+  </div>
+</div>
+
+<!-- 页面主体 -->
+<div id="main-content">
+  <!-- 患者列表页 -->
+  <div id="page-patients" class="page-content">
+    <div id="patient-list"></div>
+  </div>
+
+  <!-- 不良反应工作台 -->
+  <div id="page-reports" class="page-content" style="display:none;">
+    <div id="report-list"></div>
+  </div>
+</div>
+
+<!-- 患者详情页（覆盖） -->
+<div id="patient-detail" class="detail-page page-content">
+  <div class="back-btn" onclick="closeDetail()">← 返回列表</div>
+  <div id="detail-content"></div>
+</div>
+
+<!-- 发送指导模态框 -->
+<div class="modal-mask" id="guide-modal">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <div class="modal-title">📝 发送用药指导</div>
+      <button class="modal-close" onclick="closeGuideModal()">✕</button>
+    </div>
+    <div class="guide-form">
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">
+        发送给：<strong id="guide-patient-name"></strong>
+      </div>
+      <textarea id="guide-content" placeholder="请输入用药指导内容，如：硝苯地平控释片请整片吞服，不要咬碎或掰开服用…"></textarea>
+      <button class="action-btn action-primary" style="margin-top:12px;width:100%;" onclick="sendGuide()">发送</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+ * 模拟数据（正式环境替换为 API 调用）
+ * ============================================================ */
+const PHARMACIST_SESSION_KEY = 'pharmacist_session';
+
+const MOCK_PATIENTS = [
+  {
+    id: 'p001', name: '张华', sex: '男', age: 67, phone: '138****1234',
+    diseases: [{name:'高血压', years:8}, {name:'2型糖尿病', years:5}],
+    allergies: ['青霉素'],
+    edu: '高中/中专', height: 172, weight: 78,
+    adherence: 0.92,
+    meds: [
+      {name:'硝苯地平控释片', dosage:'30mg qd', time:'07:00', checked: true},
+      {name:'二甲双胍肠溶片', dosage:'0.5g bid', time:'07:00', checked: true},
+      {name:'阿托伐他汀钙片', dosage:'20mg qn', time:'21:00', checked: true}
+    ],
+    lastVisit: '2024-08-10'
+  },
+  {
+    id: 'p002', name: '李梅', sex: '女', age: 54, phone: '139****8765',
+    diseases: [{name:'类风湿性关节炎', years:3}],
+    allergies: [],
+    edu: '本科', height: 160, weight: 55,
+    adherence: 0.65,
+    meds: [
+      {name:'甲氨蝶呤片', dosage:'10mg qw', time:'08:00', checked: false},
+      {name:'来氟米特片', dosage:'20mg qd', time:'08:00', checked: true}
+    ],
+    lastVisit: '2024-08-15'
+  },
+  {
+    id: 'p003', name: '王建国', sex: '男', age: 72, phone: '137****3321',
+    diseases: [{name:'冠心病', years:6}, {name:'心房颤动', years:2}, {name:'高血压', years:10}],
+    allergies: ['磺胺类', '虾'],
+    edu: '初中', height: 168, weight: 82,
+    adherence: 0.78,
+    meds: [
+      {name:'华法林钠片', dosage:'3mg qd', time:'20:00', checked: true},
+      {name:'胺碘酮片', dosage:'0.2g tid', time:'08:00', checked: true},
+      {name:'培哚普利片', dosage:'4mg qd', time:'08:00', checked: false}
+    ],
+    lastVisit: '2024-08-05'
+  },
+  {
+    id: 'p004', name: '刘淑芬', sex: '女', age: 61, phone: '136****5544',
+    diseases: [{name:'骨质疏松', years:4}],
+    allergies: [],
+    edu: '小学及以下', height: 155, weight: 52,
+    adherence: 0.45,
+    meds: [
+      {name:'阿仑膦酸钠片', dosage:'70mg qw', time:'07:30', checked: false},
+      {name:'钙尔奇D片', dosage:'600mg qd', time:'07:30', checked: false}
+    ],
+    lastVisit: '2024-07-28'
+  },
+  {
+    id: 'p005', name: '陈志强', sex: '男', age: 48, phone: '135****9988',
+    diseases: [{name:'痛风', years:2}],
+    allergies: [],
+    edu: '大专/高职', height: 175, weight: 90,
+    adherence: 0.88,
+    meds: [
+      {name:'苯溴马隆片', dosage:'50mg qd', time:'08:00', checked: true},
+      {name:'碳酸氢钠片', dosage:'1.0g tid', time:'08:00', checked: true}
+    ],
+    lastVisit: '2024-08-18'
+  }
+];
+
+const MOCK_REPORTS = [
+  {
+    id: 'r001', patientId: 'p002', patientName: '李梅',
+    date: '2024-08-19 14:32', severity: '中度',
+    symptoms: ['恶心', '乏力', '头晕'],
+    description: '服用甲氨蝶呤后约2小时出现恶心，伴乏力，无呕吐。症状持续约4小时后自行缓解。',
+    photo: null, status: '待处理'
+  },
+  {
+    id: 'r002', patientId: 'p003', patientName: '王建国',
+    date: '2024-08-18 09:15', severity: '轻度',
+    symptoms: ['皮疹', '瘙痒'],
+    description: '服用胺碘酮后手臂出现散在红色皮疹，轻度瘙痒，未发热。',
+    photo: null, status: '待处理'
+  },
+  {
+    id: 'r003', patientId: 'p004', patientName: '刘淑芬',
+    date: '2024-08-17 20:05', severity: '中度',
+    symptoms: ['恶心', '腹痛', '腹泻'],
+    description: '服用阿仑膦酸钠后出现上腹部不适，轻度腹痛，腹泻2次水样便。',
+    photo: null, status: '已回复'
+  }
+];
+
+/* ============================================================
+ * 全局状态
+ * ============================================================ */
+let patients = [...MOCK_PATIENTS];
+let reports = [...MOCK_REPORTS];
+let currentTab = 'patients';
+let currentFilter = 'all';
+let currentPatientId = null;
+let selectedGuidePatient = null;
+
+/* ============================================================
+ * 启动检查
+ * ============================================================ */
+function checkAuth() {
+  const session = sessionStorage.getItem(PHARMACIST_SESSION_KEY);
+  if (!session) {
+    location.href = 'pharmacist-login.html';
+    return false;
+  }
+  const user = JSON.parse(session);
+  document.getElementById('header-info').textContent =
+    `${user.dept} · ${user.name}`;
+  return true;
+}
+
+function logout() {
+  sessionStorage.removeItem(PHARMACIST_SESSION_KEY);
+  location.href = 'pharmacist-login.html';
+}
+
+/* ============================================================
+ * Toast 提示
+ * ============================================================ */
+let toastTimer = null;
+function toast(msg, duration = 1800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+/* ============================================================
+ * Tab 切换
+ * ============================================================ */
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+
+  if (tab === 'patients') {
+    document.getElementById('page-patients').style.display = '';
+    document.getElementById('page-reports').style.display = 'none';
+    document.getElementById('patient-detail').classList.remove('active');
+    document.getElementById('search-bar').style.display = '';
+    document.getElementById('header-title').textContent = '患者管理';
+  } else {
+    document.getElementById('page-patients').style.display = 'none';
+    document.getElementById('page-reports').style.display = '';
+    document.getElementById('patient-detail').classList.remove('active');
+    document.getElementById('search-bar').style.display = 'none';
+    document.getElementById('header-title').textContent = '不良反应工作台';
+    renderReports();
+  }
+}
+
+/* ============================================================
+ * 统计栏
+ * ============================================================ */
+function updateStats() {
+  document.getElementById('stat-total').textContent = patients.length;
+
+  // 计算整体依从性
+  const avg = patients.reduce((s, p) => s + p.adherence, 0) / patients.length;
+  document.getElementById('stat-adherence').textContent = Math.round(avg * 100) + '%';
+
+  // 待处理上报数
+  const pending = reports.filter(r => r.status === '待处理').length;
+  document.getElementById('stat-report').textContent = pending;
+
+  // Tab badge
+  const badge = document.getElementById('tab-report-badge');
+  if (pending > 0) {
+    badge.textContent = pending;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+/* ============================================================
+ * 患者列表
+ * ============================================================ */
+function renderPatientList(filter = 'all', keyword = '') {
+  const listEl = document.getElementById('patient-list');
+  let filtered = patients;
+
+  if (filter === 'low') filtered = filtered.filter(p => p.adherence < 0.7);
+  if (filter === 'high') filtered = filtered.filter(p => p.adherence >= 0.85);
+
+  if (keyword) {
+    const kw = keyword.toLowerCase();
+    filtered = filtered.filter(p =>
+      p.name.toLowerCase().includes(kw) || p.phone.includes(kw)
+    );
+  }
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div style="text-align:center;padding:48px 0;color:var(--text-tertiary);font-size:14px;">
+        <div style="font-size:40px;margin-bottom:12px;">🔍</div>
+        未找到匹配的患者
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(p => {
+    const pct = Math.round(p.adherence * 100);
+    const barClass = pct < 70 ? 'low' : '';
+    const adherenceLabel = pct >= 85 ? '依从性好' : pct < 70 ? '依从性低' : '依从性中等';
+    const diseaseTags = (p.diseases||[]).slice(0,2).map(d =>
+      `<span class="tag tag-disease">${d.name}</span>`
+    ).join('');
+    const allergyTags = (p.allergies||[]).slice(0,1).map(a =>
+      `<span class="tag tag-allergy">过敏:${a}</span>`
+    ).join('');
+
+    return `
+      <div class="patient-card" onclick="showPatientDetail('${p.id}')">
+        <div class="patient-header">
+          <div>
+            <span class="patient-name">${p.name}</span>
+            <span class="patient-gender">${p.sex}</span>
+          </div>
+          <div class="patient-age">${p.age}岁</div>
+        </div>
+        <div class="adherence-bar">
+          <div class="bar-track">
+            <div class="bar-fill ${barClass}" style="width:${pct}%"></div>
+          </div>
+          <span class="adherence-text">${pct}% · ${adherenceLabel}</span>
+        </div>
+        <div class="patient-tags">
+          ${diseaseTags}${allergyTags}
+        </div>
+        <div class="patient-meta">
+          <span>📞 ${p.phone}</span>
+          <span>最近: ${p.lastVisit}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ============================================================
+ * 患者详情
+ * ============================================================ */
+function showPatientDetail(id) {
+  currentPatientId = id;
+  const p = patients.find(x => x.id === id);
+  if (!p) return;
+
+  document.getElementById('patient-detail').classList.add('active');
+  document.getElementById('main-content').style.display = 'none';
+  document.getElementById('search-bar').style.display = 'none';
+  document.getElementById('header-title').textContent = p.name + ' 的档案';
+
+  const h = parseFloat(p.height) / 100;
+  const bmi = h > 0 ? (p.weight / (h * h)).toFixed(1) : '--';
+
+  const medRows = p.meds.map(m => `
+    <div class="med-list-item">
+      <div>
+        <div class="med-name">${m.name}</div>
+        <div class="med-info">${m.dosage} · ${m.time}</div>
+      </div>
+      <div class="med-check">${m.checked ? '<span class="check-ok">✓</span>' : '<span class="check-no">○</span>'}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('detail-content').innerHTML = `
+    <!-- 基本信息 -->
+    <div class="detail-section">
+      <div class="section-title">👤 基本信息</div>
+      <div class="info-grid">
+        <div class="info-item"><label>姓名</label><span>${p.name}</span></div>
+        <div class="info-item"><label>性别/年龄</label><span>${p.sex} / ${p.age}岁</span></div>
+        <div class="info-item"><label>联系电话</label><span>${p.phone}</span></div>
+        <div class="info-item"><label>教育水平</label><span>${p.edu||'--'}</span></div>
+        <div class="info-item"><label>身高/体重</label><span>${p.height||'--'}cm / ${p.weight||'--'}kg</span></div>
+        <div class="info-item"><label>BMI</label><span>${bmi}</span></div>
+      </div>
+    </div>
+
+    <!-- 既往病史 -->
+    ${(p.diseases||[]).length > 0 ? `
+    <div class="detail-section">
+      <div class="section-title">📋 既往病史</div>
+      ${p.diseases.map(d => `
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:14px;">${d.name}</span>
+          <span style="font-size:13px;color:var(--text-tertiary);">${d.years}年</span>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <!-- 过敏史 -->
+    ${(p.allergies||[]).length > 0 ? `
+    <div class="detail-section">
+      <div class="section-title" style="color:var(--warning);">⚠️ 过敏史</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${p.allergies.map(a => `<span class="tag tag-allergy">${a}</span>`).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- 今日用药 -->
+    <div class="detail-section">
+      <div class="section-title">💊 今日用药</div>
+      ${medRows}
+    </div>
+
+    <!-- 依从性趋势（模拟） -->
+    <div class="detail-section">
+      <div class="section-title">📈 依从性</div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="flex:1;">
+          <div style="font-size:36px;font-weight:700;color:${p.adherence>=0.85?'var(--success)':p.adherence>=0.7?'var(--primary)':'var(--warning)'};">${Math.round(p.adherence*100)}%</div>
+          <div style="font-size:13px;color:var(--text-tertiary);margin-top:4px;">近30天平均</div>
+        </div>
+        <div style="font-size:13px;color:var(--text-tertiary);">
+          服用${Math.round(p.adherence*30)}/30天<br>
+          漏服${Math.round((1-p.adherence)*30)}次
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="detail-section">
+      <div class="section-title">📞 快捷操作</div>
+      <div style="display:flex;gap:8px;">
+        <button class="action-btn action-secondary" style="flex:1;" onclick="location.href='tel:';">📞 拨打电话</button>
+        <button class="action-btn action-primary" style="flex:1;" onclick="openGuideModal('${p.id}')">📝 用药指导</button>
+      </div>
+    </div>
+  `;
+}
+
+function closeDetail() {
+  currentPatientId = null;
+  document.getElementById('patient-detail').classList.remove('active');
+  document.getElementById('main-content').style.display = '';
+  document.getElementById('search-bar').style.display = '';
+  document.getElementById('header-title').textContent = '患者管理';
+}
+
+/* ============================================================
+ * 不良反应工作台
+ * ============================================================ */
+function renderReports() {
+  const listEl = document.getElementById('report-list');
+  if (reports.length === 0) {
+    listEl.innerHTML = `
+      <div style="text-align:center;padding:48px 0;color:var(--text-tertiary);font-size:14px;">
+        <div style="font-size:40px;margin-bottom:12px;">✅</div>
+        暂无不良反应上报记录
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = reports.map(r => {
+    const sevClass = r.severity === '轻度' ? 'sev-light' : r.severity === '中度' ? 'sev-mid' : 'sev-sev';
+    return `
+      <div class="report-card">
+        <div class="report-header">
+          <span class="report-patient">👤 ${r.patientName}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="severity-badge ${sevClass}">${r.severity}</span>
+            <span class="report-time">${r.date}</span>
+          </div>
+        </div>
+        <div class="report-symptoms">
+          ${r.symptoms.map(s => `<span class="symptom-tag">${s}</span>`).join('')}
+        </div>
+        <div class="report-desc">${r.description}</div>
+        <div style="font-size:12px;color:var(--text-tertiary);margin-top:8px;">患者ID: ${r.patientId} · 编号: ${r.id}</div>
+        <div class="report-actions">
+          <button class="action-btn action-secondary" onclick="showPatientDetail('${r.patientId}')">查看档案</button>
+          <button class="action-btn action-primary" onclick="handleReport('${r.id}')">${r.status==='待处理'?'处理':'已处理'}</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function handleReport(id) {
+  const r = reports.find(x => x.id === id);
+  if (!r) return;
+  if (r.status === '待处理') {
+    r.status = '已回复';
+    toast('已标记为已处理');
+    renderReports();
+    updateStats();
+  } else {
+    toast('该报告已完成处理');
+  }
+}
+
+/* ============================================================
+ * 用药指导发送
+ * ============================================================ */
+function openGuideModal(patientId) {
+  selectedGuidePatient = patientId;
+  const p = patients.find(x => x.id === patientId);
+  document.getElementById('guide-patient-name').textContent = p ? p.name : '未知';
+  document.getElementById('guide-modal').classList.add('show');
+}
+
+function closeGuideModal() {
+  document.getElementById('guide-modal').classList.remove('show');
+  selectedGuidePatient = null;
+  document.getElementById('guide-content').value = '';
+}
+
+function sendGuide() {
+  const content = document.getElementById('guide-content').value.trim();
+  if (!content) {
+    toast('请输入指导内容');
+    return;
+  }
+  const p = patients.find(x => x.id === selectedGuidePatient);
+  toast(`已发送给 ${p ? p.name : '患者'}（演示）`);
+  closeGuideModal();
+}
+
+/* ============================================================
+ * 搜索 & 筛选
+ * ============================================================ */
+document.getElementById('search-input').addEventListener('input', e => {
+  renderPatientList(currentFilter, e.target.value);
+});
+
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentFilter = chip.dataset.filter;
+    renderPatientList(currentFilter, document.getElementById('search-input').value);
+  });
+});
+
+/* ============================================================
+ * 初始化
+ * ============================================================ */
+if (checkAuth()) {
+  updateStats();
+  renderPatientList();
+}
+
+/* 点击遮罩关闭模态框 */
+document.getElementById('guide-modal').addEventListener('click', e => {
+  if (e.target.id === 'guide-modal') closeGuideModal();
+});
+
+document.getElementById('btn-logout').addEventListener('click', logout);
+</script>
+</body>
+</html>
