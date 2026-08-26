@@ -3241,9 +3241,9 @@
         method: 'POST',
         body: JSON.stringify({
           content: audioBase64 ? null : (hasContent ? (input.value || '').trim() : null),
-          photo: photoBase64 || null,
-          audio: audioBase64 || null,
-          audio_duration: audioDuration
+          photo_base64: photoBase64,
+          audio_base64: audioBase64,
+          audio_duration: audioDuration || 0
         })
       }).catch(() => {
         // 网络失败时仍保留本地消息
