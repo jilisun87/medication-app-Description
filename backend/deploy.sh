@@ -33,10 +33,47 @@ systemctl start mysql 2>/dev/null || systemctl start mariadb
 systemctl enable mysql 2>/dev/null || systemctl enable mariadb
 sleep 2
 
-# 设置密码（幂等）
-mysql -e "ALTER USER IF EXISTS 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PASS}';" 2>/dev/null || \
-mysql -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('${DB_PASS}');" 2>/dev/null || true
-mysql -e "FLUSH PRIVILEGES;"
+# 探测当前 root 密码：先空密码、再旧密码
+if mysql -u root -e "SELECT 1" >/dev/null 2>&1; then
+  CURRENT_PASS=""
+elif mysql -u root -p"MediDB2024!" -e "SELECT 1" >/dev/null 2>&1; then
+  CURRENT_PASS="MediDB2024!"
+elif mysql -u root -p"${DB_PASS}" -e "SELECT 1" >/dev/null 2>&1; then
+  CURRENT_PASS="${DB_PASS}"
+else
+  # 提示用户输入（保留 interactive 模式）
+  echo "⚠️  无法自动连接 MySQL root，请输入当前 root 密码（按回车设为空）:"
+  read -s CURRENT_PASS
+fi
+
+echo "  当前密码探测: ${CURRENT_PASS:-(空)}"
+
+# 重建 root 为统一密码（用 sudo /etc/init.d/mysql 强制重置）
+mysql --version | head -1
+# 先尝试温和方法
+mysql -u root ${CURRENT_PASS:+-p"$CURRENT_PASS"} -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PASS}'; FLUSH PRIVILEGES;" 2>&1 || {
+  echo "  ⚠️ 温和方法失败，用 init-file 强制重置 root 密码..."
+  INIT_FILE=$(mktemp)
+  echo "FLUSH PRIVILEGES;" > $INIT_FILE
+  echo "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PASS}';" >> $INIT_FILE
+  echo "FLUSH PRIVILEGES;" >> $INIT_FILE
+  systemctl stop mysql
+  mysqld --user=mysql --init-file=$INIT_FILE --daemonize 2>/dev/null || \
+    mysqld_safe --user=mysql --init-file=$INIT_FILE &
+  sleep 5
+  systemctl start mysql
+  rm -f $INIT_FILE
+}
+
+# 验证新密码可用
+for i in 1 2 3 4 5; do
+  if mysql -u root -p"${DB_PASS}" -e "SELECT 1" >/dev/null 2>&1; then
+    echo "  ✓ 新密码已生效"
+    break
+  fi
+  echo "  等待 MySQL 启动 ($i)..."
+  sleep 2
+done
 
 # 创建数据库
 mysql -u root -p"${DB_PASS}" -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>&1
