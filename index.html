@@ -2970,7 +2970,7 @@
               <option value="小学及以下" ${(data.edu||'')==='小学及以下'?'selected':''}>小学及以下</option>
               <option value="初中" ${(data.edu||'')==='初中'?'selected':''}>初中</option>
               <option value="高中/中专" ${(data.edu||'')==='高中/中专'?'selected':''}>高中/中专</option>
-              <option value="大专/高职" ${(data.edu||=''=='')=='大专/高职'?'selected':''}>大专/高职</option>
+              <option value="大专/高职" ${(data.edu||'')==='大专/高职'?'selected':''}>大专/高职</option>
               <option value="本科" ${(data.edu||'')==='本科'?'selected':''}>本科</option>
               <option value="硕士及以上" ${(data.edu||'')==='硕士及以上'?'selected':''}>硕士及以上</option>
             </select>
@@ -3137,6 +3137,18 @@
             });
             localStorage.setItem('pma_token', loginData.token);
             localStorage.setItem('pma_patient_id', loginData.patient_id);
+            // 注册成功后更新详细信息
+            await apiFetch('/api/patient/profile', {
+              method: 'PUT',
+              body: JSON.stringify({
+                sex: merged.sex, age: merged.age,
+                height_cm: merged.height ? parseFloat(merged.height) : null,
+                weight_kg: merged.weight ? parseFloat(merged.weight) : null,
+                edu_level: merged.edu,
+                diseases: merged.diseases || [],
+                allergies: merged.allergies || []
+              })
+            });
             Modal.close();
             toast('✓ 注册成功，已自动登录');
             Router.render();

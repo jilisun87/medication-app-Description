@@ -1188,7 +1188,7 @@ function switchTab(tab) {
     document.getElementById('page-chat').style.display = '';
     document.getElementById('page-chat').classList.add('active');
     document.getElementById('header-title').textContent = '💬 患者消息';
-    renderChatList();
+    await renderChatList();
   } else if (tab === 'profile') {
     // 显示"我的"页面
     document.getElementById('page-patients').style.display = 'none';
@@ -1546,58 +1546,67 @@ function sendGuide() {
 }
 
 /* ============================================================
- * 患者消息模块
+ * 患者消息模块（对接后端 API）
  * ============================================================ */
 const MSG_STORE_KEY = 'pma_messages';
+let currentConvId = null;
+let _msgPollTimer = null;
 
-/**
- * 从 localStorage 加载消息数据，若无数据则写入 Mock 模拟对话
- * @returns {Object} 包含 conversations 数组的消息对象
- */
-function loadMessages() {
-  let data = null;
+/** 从后端加载会话列表 */
+async function loadMessages() {
+  try {
+    const convs = await apiFetch('/api/pharmacist/messages');
+    if (Array.isArray(convs)) {
+      const data = { conversations: convs.map(c => ({
+        id: c.id, patientName: c.patient_name, patientId: c.patient_id,
+        phone: c.patient_phone || '', lastMessage: c.last_message || '',
+        lastTime: c.last_time || '', unread: c.unread || 0, messages: []
+      }))};
+      localStorage.setItem(MSG_STORE_KEY, JSON.stringify(data));
+      return data;
+    }
+  } catch (e) {
+    console.warn('加载消息列表失败', e);
+  }
+  // 降级到本地缓存
   try {
     const raw = localStorage.getItem(MSG_STORE_KEY);
-    if (raw) data = JSON.parse(raw);
+    if (raw) return JSON.parse(raw);
   } catch (e) {}
-  if (!data || !Array.isArray(data.conversations)) {
-    // 无数据时写入一条 Mock 模拟对话
-    const mockData = {
-      conversations: [
-        {
-          id: 'conv_mock_001',
-          patientName: '张华',
-          patientId: 'p001',
-          phone: '138****1234',
-          lastMessage: '药师你好，我吃了药有点恶心，正常吗？',
-          lastTime: '今天 10:28',
-          unread: 1,
-          messages: [
-            { id: 'm_mock_1', from: 'patient', content: '药师你好，我吃了药有点恶心，正常吗？', time: '10:28', photo: null }
-          ]
-        }
-      ]
-    };
-    localStorage.setItem(MSG_STORE_KEY, JSON.stringify(mockData));
-    return mockData;
-  }
-  return data;
+  return { conversations: [] };
 }
 
-/**
- * 保存消息数据到 localStorage
- * @param {Object} data 消息对象
- */
-function saveMessages(data) {
-  localStorage.setItem(MSG_STORE_KEY, JSON.stringify(data));
+/** 从后端加载指定对话的消息 */
+async function loadConversationMessages(convId) {
+  try {
+    const msgs = await apiFetch(`/api/pharmacist/messages/${convId}`);
+    if (Array.isArray(msgs)) return msgs;
+  } catch (e) {
+    console.warn('加载对话失败', e);
+  }
+  return [];
+}
+
+/** 发送药师回复 */
+async function sendPharmMessage(convId, content, audioBase64 = null, duration = 0) {
+  try {
+    await apiFetch('/api/pharmacist/messages/reply', {
+      method: 'POST',
+      body: JSON.stringify({ conversation_id: convId, content, audio_base64: audioBase64, audio_duration: duration })
+    });
+    return true;
+  } catch (e) {
+    console.error('发送消息失败', e);
+    return false;
+  }
 }
 
 /**
  * 渲染消息列表页（聊天列表）
  */
-function renderChatList() {
+async function renderChatList() {
   const listEl = document.getElementById('chat-list');
-  const data = loadMessages();
+  const data = await loadMessages();
   const convs = data.conversations || [];
 
   if (convs.length === 0) {
@@ -1652,32 +1661,55 @@ function renderChatList() {
  * 打开指定对话详情页
  * @param {string} convId 对话 ID
  */
-function openConversation(convId) {
-  const data = loadMessages();
-  const conv = (data.conversations || []).find(c => c.id === convId);
-  if (!conv) return;
-
+async function openConversation(convId) {
   currentConvId = convId;
 
   // 清零未读数
-  conv.unread = 0;
-  saveMessages(data);
+  try {
+    const data = await loadMessages();
+    const conv = (data.conversations || []).find(c => c.id === convId);
+    if (conv) { conv.unread = 0; }
+  } catch (e) {}
+
   // 重新渲染徽章
-  const totalUnread = (data.conversations || []).reduce((s, c) => s + (c.unread || 0), 0);
-  const badge = document.getElementById('tab-chat-badge');
-  if (totalUnread > 0) {
-    badge.textContent = totalUnread > 99 ? '99+' : totalUnread;
-    badge.style.display = 'inline-block';
-  } else {
-    badge.style.display = 'none';
+  try {
+    const data = await loadMessages();
+    const totalUnread = (data.conversations || []).reduce((s, c) => s + (c.unread || 0), 0);
+    const badge = document.getElementById('tab-chat-badge');
+    if (badge) {
+      if (totalUnread > 0) { badge.textContent = totalUnread > 99 ? '99+' : totalUnread; badge.style.display = 'inline-block'; }
+      else { badge.style.display = 'none'; }
+    }
+  } catch (e) {}
+
+  // 加载对话详情
+  let conv = null;
+  try {
+    const data = await loadMessages();
+    conv = (data.conversations || []).find(c => c.id === convId);
+  } catch (e) {}
+
+  if (!conv) {
+    // 兜底：尝试从 API 获取
+    try {
+      const msgs = await loadConversationMessages(convId);
+      if (msgs.length > 0) {
+        const firstMsg = msgs[0];
+        conv = { id: convId, patientName: '', patientId: firstMsg.patient_id || '', phone: '', lastMessage: '', lastTime: '', unread: 0, messages: msgs };
+      }
+    } catch (e) {}
   }
 
-  // 填充头部信息
+  if (!conv) {
+    toast('无法加载对话');
+    return;
+  }
+
   document.getElementById('conv-title').textContent = conv.patientName || '患者';
   document.getElementById('conv-phone').textContent = conv.phone || '';
 
   // 渲染消息气泡
-  renderMessages(conv.messages || []);
+  await renderMessages(conv.messages || []);
 
   // 隐藏其他页面，显示对话页
   document.getElementById('main-content').style.display = 'none';
@@ -1752,17 +1784,18 @@ function renderMessages(messages) {
  * @param {string|null} audio 音频 data URL 或 null
  * @param {number|null} duration 音频时长（秒）或 null
  */
-function sendMessage(content, photo, audio, duration) {
+async function sendMessage(content, photo, audio, duration) {
   if (!content && !photo && !audio) return;
-  const data = loadMessages();
-  const conv = (data.conversations || []).find(c => c.id === currentConvId);
-  if (!conv) return;
-
   const now = new Date();
   const hh = String(now.getHours()).padStart(2, '0');
   const mm = String(now.getMinutes()).padStart(2, '0');
   const timeStr = `${hh}:${mm}`;
 
+  // 先发到后端
+  const ok = await sendPharmMessage(currentConvId, content, audio, duration || 0);
+  if (!ok) { toast('发送失败，请重试'); return; }
+
+  // 构造消息对象用于本地渲染
   const msgObj = {
     id: 'm_' + Date.now(),
     from: 'pharmacist',
@@ -1773,13 +1806,18 @@ function sendMessage(content, photo, audio, duration) {
     duration: duration != null ? duration : null
   };
 
-  conv.messages = conv.messages || [];
-  conv.messages.push(msgObj);
-  conv.lastMessage = audio ? '[语音消息]' : (content ? (content.length > 30 ? content.substring(0, 30) + '…' : content) : '[图片]');
-  conv.lastTime = '今天 ' + timeStr;
-  saveMessages(data);
+  // 更新会话列表预览
+  try {
+    const data = await loadMessages();
+    const conv = (data.conversations || []).find(c => c.id === currentConvId);
+    if (conv) {
+      conv.lastMessage = audio ? '[语音消息]' : (content ? (content.length > 30 ? content.substring(0, 30) + '…' : content) : '[图片]');
+      conv.lastTime = '今天 ' + timeStr;
+      localStorage.setItem(MSG_STORE_KEY, JSON.stringify(data));
+    }
+  } catch (e) {}
 
-  // 追加本条消息到 DOM
+  // 追加到 DOM
   const body = document.getElementById('conv-body');
   const row = document.createElement('div');
   row.className = 'msg-row pharmacist';
@@ -1822,16 +1860,12 @@ function sendMessage(content, photo, audio, duration) {
   }
   body.appendChild(row);
   body.scrollTop = body.scrollHeight;
-
-  // 更新列表页的预览
-  conv.lastMessage = audio ? '[语音消息]' : (content || '[图片]');
-  conv.lastTime = '今天 ' + timeStr;
 }
 
 /**
  * 返回消息列表页
  */
-function closeConversation() {
+async function closeConversation() {
   currentConvId = null;
   document.getElementById('page-conv').classList.remove('active');
   document.getElementById('page-conv').style.display = 'none';
@@ -1840,7 +1874,7 @@ function closeConversation() {
   document.getElementById('search-bar').style.display = 'none';
   document.getElementById('main-content').style.display = 'none';
   document.getElementById('header-title').textContent = '💬 患者消息';
-  renderChatList();
+  await renderChatList();
 }
 
 /**

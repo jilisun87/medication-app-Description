@@ -340,12 +340,12 @@ def get_messages(authorization: str = Header(None)):
     payload = verify_token(authorization)
     pid = pid_from_token(payload)
     rows = query("SELECT * FROM messages WHERE patient_id=%s ORDER BY created_at ASC LIMIT 200", (pid,))
-    return JSONResponse(ok([{
-        "id": r["id"], "from": r["from_role"], "content": r["content"],
-        "photo_url": r["photo_url"], "audio_url": r["audio_url"],
-        "audio_duration": r["audio_duration"],
-        "time": str(r["created_at"])[11:16]
-    } for r in rows]))
+    return JSONResponse(ok([
+        {"id": r["id"], "from": r["from_role"], "content": r["content"],
+         "photo": r["photo_url"], "audio": r["audio_url"],
+         "duration": r["audio_duration"],
+         "time": str(r["created_at"])[11:16]}
+        for r in rows]))
 
 @app.post("/api/messages")
 def send_message(d: MessageInput, authorization: str = Header(None)):
@@ -354,7 +354,11 @@ def send_message(d: MessageInput, authorization: str = Header(None)):
     conv_id = d.conversation_id or f"conv_{pid}"
     mid = make_id()
     photo_url = f"data:image/jpeg;base64,{d.photo_base64}" if d.photo_base64 else None
+    if not photo_url and d.photo:
+        photo_url = f"data:image/jpeg;base64,{d.photo}"
     audio_url = f"data:audio/webm;base64,{d.audio_base64}" if d.audio_base64 else None
+    if not audio_url and d.audio:
+        audio_url = f"data:audio/webm;base64,{d.audio}"
     query("""INSERT INTO messages (id,patient_id,conversation_id,from_role,content,photo_url,audio_url,audio_duration)
               VALUES (%s,%s,%s,'patient',%s,%s,%s,%s)""",
           (mid, pid, conv_id, d.content, photo_url, audio_url, d.audio_duration), commit=True)
@@ -534,17 +538,17 @@ def pharm_conv_messages(conv_id: str, authorization: str = Header(None)):
     require_pharmacist(payload)
     rows = query("SELECT * FROM messages WHERE conversation_id=%s ORDER BY created_at ASC", (conv_id,))
     query("UPDATE messages SET is_read=1 WHERE conversation_id=%s AND from_role='patient'", (conv_id,), commit=True)
-    return JSONResponse(ok([{
-        "id": r["id"], "from": r["from_role"], "content": r["content"],
-        "photo_url": r["photo_url"], "audio_url": r["audio_url"],
-        "audio_duration": r["audio_duration"], "time": str(r["created_at"])[11:16]
-    } for r in rows]))
+    return JSONResponse(ok([
+        {"id": r["id"], "from": r["from_role"], "content": r["content"],
+         "photo": r["photo_url"], "audio": r["audio_url"],
+         "duration": r["audio_duration"], "time": str(r["created_at"])[11:16]}
+        for r in rows]))
 
 class PharmReplyMsg(BaseModel):
     conversation_id: str
-    content: str = None
-    audio_base64: str = None
-    audio_duration: int = None
+    content: str | None = None
+    audio_base64: str | None = None
+    audio_duration: int = 0
 
 @app.post("/api/pharmacist/messages/reply")
 def pharm_reply(d: PharmReplyMsg, authorization: str = Header(None)):
