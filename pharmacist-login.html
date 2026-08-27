@@ -2,123 +2,179 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#2B7AEE">
   <title>药师登录 · 青岛市市立医院</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%8A%3C/text%3E%3C/svg%3E" />
   <style>
-    /* ============================================================
-     * 变量定义
-     * ============================================================ */
     :root {
-      --primary: #1890FF;
-      --primary-dark: #096DD9;
-      --primary-light: #E6F7FF;
-      --success: #52C41A;
+      --primary: #2B7AEE;
+      --primary-dark: #1B5BB5;
+      --primary-light: #E8F1FF;
+      --primary-glow: rgba(43,122,238,0.25);
+      --accent: #5B8DEF;
       --warning: #FF6B6B;
-      --bg: #F5F7FA;
+      --bg-soft: #E8ECF4;
       --card-bg: #FFFFFF;
-      --text-primary: #262626;
-      --text-secondary: #595959;
-      --text-tertiary: #8C8C8C;
-      --border: #F0F0F0;
+      --text-primary: #1A1D29;
+      --text-secondary: #555B6E;
+      --text-tertiary: #8C92A5;
+      --border: #E4E8F0;
       --radius: 12px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-    /* ============================================================
-     * 页面布局
-     * ============================================================ */
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: linear-gradient(135deg, #1890FF 0%, #096DD9 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+                   "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+                   "Helvetica Neue", sans-serif;
+      background: linear-gradient(160deg, #2B7AEE 0%, #1B5BB5 50%, #5B8DEF 100%);
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
+      position: relative;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ============================================================
-     * 登录卡片
-     * ============================================================ */
+    /* 背景装饰 */
+    .bg-circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      pointer-events: none;
+    }
+    .bg-circle.c1 { top: -80px; right: -80px; width: 240px; height: 240px; }
+    .bg-circle.c2 { bottom: -100px; left: -60px; width: 200px; height: 200px; }
+    .bg-circle.c3 { top: 40%; right: -40px; width: 100px; height: 100px; background: rgba(255,255,255,0.04); }
+
     .login-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
       width: 100%;
-      max-width: 400px;
-      padding: 40px 32px;
-      text-align: center;
+      max-width: 380px;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: var(--radius-xl);
+      padding: 40px 32px 32px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+      position: relative;
+      z-index: 1;
+      animation: cardIn 0.6s var(--ease-out);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(24px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    /* 医院Logo和名称 */
-    .hospital-logo { font-size: 48px; margin-bottom: 12px; }
-    .hospital-name { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-    .dept-name { font-size: 13px; color: var(--text-tertiary); margin-bottom: 32px; }
+    .logo-box {
+      width: 80px;
+      height: 80px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 28px var(--primary-glow);
+    }
 
-    /* 标题 */
-    .title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-    .subtitle { font-size: 13px; color: var(--text-tertiary); margin-bottom: 28px; }
+    .hospital-name {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      letter-spacing: -0.3px;
+    }
+    .dept-name {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-tertiary);
+      margin-bottom: 32px;
+    }
 
-    /* 表单项 */
-    .form-field { margin-bottom: 16px; text-align: left; }
+    .form-field { margin-bottom: 16px; }
     .form-field label {
       display: block;
       font-size: 13px;
+      font-weight: 600;
       color: var(--text-secondary);
       margin-bottom: 6px;
-      font-weight: 500;
     }
     .form-field input {
       width: 100%;
-      padding: 12px 14px;
+      height: 48px;
+      padding: 0 16px;
       border: 1.5px solid var(--border);
       border-radius: var(--radius);
       font-size: 15px;
+      background: var(--bg-soft);
       outline: none;
-      transition: border-color 0.2s;
+      transition: all 0.2s var(--ease-out);
     }
-    .form-field input:focus { border-color: var(--primary); }
-    .form-field input.error { border-color: var(--warning); }
+    .form-field input:focus {
+      border-color: var(--primary);
+      background: #fff;
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+    .form-field input.error {
+      border-color: var(--warning);
+      animation: shake 0.4s;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
 
-    /* 主按钮 */
     .btn-primary {
       width: 100%;
-      padding: 14px;
-      background: var(--primary);
+      height: 50px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
       color: white;
       border: none;
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       font-size: 16px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       margin-top: 8px;
-      transition: background 0.2s;
+      box-shadow: 0 4px 20px var(--primary-glow);
+      transition: all 0.3s var(--spring);
+      letter-spacing: 0.5px;
     }
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    /* 错误提示 */
     .error-msg {
       color: var(--warning);
       font-size: 13px;
+      text-align: center;
       margin-top: 12px;
       min-height: 18px;
     }
 
-    /* 返回链接 */
     .back-link {
       display: block;
-      margin-top: 24px;
+      margin-top: 20px;
       font-size: 13px;
       color: var(--primary);
       text-decoration: none;
+      text-align: center;
+      font-weight: 500;
     }
-    .back-link:hover { text-decoration: underline; }
 
-    /* 演示账号提示 */
     .demo-hint {
       margin-top: 24px;
-      padding: 14px;
+      padding: 14px 16px;
       background: var(--primary-light);
       border-radius: var(--radius);
       font-size: 12px;
@@ -130,15 +186,14 @@
   </style>
 </head>
 <body>
+  <div class="bg-circle c1"></div>
+  <div class="bg-circle c2"></div>
+  <div class="bg-circle c3"></div>
+
   <div class="login-card">
-    <!-- 医院标识 -->
-    <div class="hospital-logo">🏥</div>
+    <div class="logo-box">🏥</div>
     <div class="hospital-name">青岛市市立医院</div>
     <div class="dept-name">临床药学科 · 用药管理平台</div>
-
-    <!-- 登录表单 -->
-    <div class="title">药师登录</div>
-    <div class="subtitle">请输入授权账号登录管理后台</div>
 
     <div class="form-field">
       <label>药师账号</label>
@@ -154,7 +209,6 @@
 
     <a href="index.html" class="back-link">← 返回患者端</a>
 
-    <!-- 演示账号提示 -->
     <div class="demo-hint">
       <strong>📌 演示账号</strong>
       账号：pharmacist<br>
@@ -165,23 +219,15 @@
   </div>
 
   <script>
-    /* ============================================================
-     * 演示账号配置（正式环境替换为后端验证）
-     * ============================================================ */
-    // DOM 元素引用
     const btnLogin = document.getElementById('btn-login');
     const inputUsername = document.getElementById('username');
     const inputPassword = document.getElementById('password');
     const errorMsg = document.getElementById('error-msg');
 
-    /* ============================================================
-     * 登录处理（真实 API 调用）
-     * ============================================================ */
     async function doLogin() {
       const u = inputUsername.value.trim();
       const p = inputPassword.value;
 
-      // 清空错误状态
       errorMsg.textContent = '';
       inputUsername.classList.remove('error');
       inputPassword.classList.remove('error');
@@ -197,7 +243,6 @@
         return;
       }
 
-      // 按钮禁用 + loading
       btnLogin.disabled = true;
       btnLogin.textContent = '登录中…';
 
@@ -211,13 +256,12 @@
 
         if (!res.ok) {
           errorMsg.textContent = json.detail || json.message || '账号或密码错误';
-          inputUsername.classList.add('error');
+          inputPassword.classList.add('error');
           btnLogin.disabled = false;
           btnLogin.textContent = '登 录';
           return;
         }
 
-        // 登录成功，保存 token 和药师信息
         const pharm = json.data.pharmacist;
         sessionStorage.setItem('pharm_token', json.data.token);
         sessionStorage.setItem('pharmacist_session', JSON.stringify({
@@ -228,7 +272,6 @@
           loginTime: new Date().toISOString()
         }));
 
-        // 跳转到管理后台
         location.href = 'pharmacist.html';
       } catch (err) {
         errorMsg.textContent = '网络错误，请检查网络后重试';
@@ -237,9 +280,6 @@
       }
     }
 
-    /* ============================================================
-     * 事件绑定
-     * ============================================================ */
     btnLogin.addEventListener('click', doLogin);
     inputPassword.addEventListener('keydown', e => {
       if (e.key === 'Enter') doLogin();

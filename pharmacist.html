@@ -9,27 +9,35 @@
      * 变量定义
      * ============================================================ */
     :root {
-      --primary: #1890FF;
-      --primary-dark: #096DD9;
-      --primary-light: #E6F7FF;
-      --success: #52C41A;
-      --success-light: #F6FFED;
+      --primary: #2B7AEE;
+      --primary-dark: #1B5BB5;
+      --primary-light: #E8F1FF;
+      --primary-glow: rgba(43,122,238,0.25);
+      --accent: #5B8DEF;
+      --success: #34C759;
+      --success-light: #E8F9EC;
       --warning: #FF6B6B;
       --warning-light: #FFF1F0;
-      --bg: #F5F7FA;
+      --bg: #F2F5FA;
+      --bg-soft: #E8ECF4;
       --card-bg: #FFFFFF;
-      --text-primary: #262626;
-      --text-secondary: #595959;
-      --text-tertiary: #8C8C8C;
-      --text-disabled: #BFBFBF;
-      --border: #F0F0F0;
-      --divider: #F5F5F5;
-      --shadow: 0 2px 8px rgba(0,0,0,0.08);
-      --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+      --text-primary: #1A1D29;
+      --text-secondary: #555B6E;
+      --text-tertiary: #8C92A5;
+      --text-disabled: #BFC4D2;
+      --border: #E4E8F0;
+      --divider: #EFF2F8;
+      --shadow: 0 2px 12px rgba(20,30,60,0.06);
+      --shadow-md: 0 4px 20px rgba(20,30,60,0.08);
+      --shadow-lg: 0 8px 32px rgba(20,30,60,0.12);
+      --shadow-glow: 0 4px 24px var(--primary-glow);
       --radius: 12px;
       --radius-sm: 8px;
-      --radius-lg: 16px;
-      --tab-height: 56px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --tab-height: 60px;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -45,8 +53,10 @@
      * 顶部导航栏
      * ============================================================ */
     .header {
-      background: var(--primary);
-      color: white;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      color: var(--text-primary);
       padding: 14px 20px;
       display: flex;
       align-items: center;
@@ -54,20 +64,22 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
     }
-    .header-title { font-size: 18px; font-weight: 600; }
-    .header-info { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+    .header-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-info { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
     .logout-btn {
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      color: white;
-      padding: 6px 14px;
+      background: var(--primary-light);
+      border: none;
+      color: var(--primary);
+      padding: 8px 16px;
       border-radius: 20px;
       font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
+      transition: all 0.2s var(--ease-out);
     }
-    .logout-btn:hover { background: rgba(255, 255, 255, 0.3); }
+    .logout-btn:active { transform: scale(0.95); }
 
     /* ============================================================
      * 统计卡片栏
@@ -77,15 +89,19 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
       padding: 16px;
-      background: white;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
     }
     .stat-item {
       text-align: center;
-      padding: 16px 8px;
-      background: var(--bg);
+      padding: 18px 8px;
+      background: var(--bg-soft);
       border-radius: var(--radius-lg);
+      transition: transform 0.3s var(--spring);
     }
+    .stat-item:active { transform: scale(0.96); }
     .stat-icon {
       font-size: 22px;
       margin-bottom: 6px;
@@ -159,12 +175,12 @@
       border-radius: var(--radius-lg);
       padding: 16px;
       margin-bottom: 12px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 2px 12px rgba(20,30,60,0.05);
       cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
+      transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
+      border: 1px solid rgba(228,232,240,0.6);
     }
-    .patient-card:active { transform: scale(0.98); }
-    .patient-card:hover { box-shadow: var(--shadow-lg); }
+    .patient-card:active { transform: scale(0.985); }
     .patient-header {
       display: flex;
       justify-content: space-between;
@@ -349,7 +365,9 @@
     .modal-mask {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(10,15,30,0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       z-index: 200;
       display: none;
       align-items: flex-end;
@@ -358,12 +376,22 @@
     .modal-mask.show { display: flex; }
     .modal-sheet {
       background: white;
-      border-radius: 20px 20px 0 0;
+      border-radius: 24px 24px 0 0;
       width: 100%;
       max-width: 600px;
       max-height: 90vh;
       overflow-y: auto;
       padding: 20px;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.12);
+    }
+    .modal-sheet::before {
+      content: '';
+      display: block;
+      width: 36px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      margin: 0 auto 16px;
     }
     .modal-header {
       display: flex;
@@ -395,10 +423,13 @@
       left: 0;
       right: 0;
       height: var(--tab-height);
-      background: white;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
       border-top: 1px solid var(--border);
       display: flex;
       z-index: 99;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.04);
     }
     .tab-item {
       flex: 1;
@@ -411,25 +442,26 @@
       color: var(--text-tertiary);
       cursor: pointer;
       position: relative;
-      transition: color 0.2s, background 0.2s;
+      transition: color 0.3s var(--ease-out), transform 0.3s var(--spring);
       padding: 6px 0;
       border-radius: 8px;
       margin: 0 2px;
     }
     .tab-item.active {
       color: var(--primary);
-      background: var(--primary-light);
+      transform: translateY(-2px);
     }
     .tab-item.active::before {
       content: '';
       position: absolute;
-      bottom: 0;
+      bottom: 6px;
       left: 50%;
       transform: translateX(-50%);
-      width: 20px;
-      height: 2px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
       background: var(--primary);
-      border-radius: 2px 2px 0 0;
+      box-shadow: 0 0 8px var(--primary-glow);
     }
     .tab-icon { font-size: 20px; line-height: 1; }
     .tab-text { font-size: 11px; font-weight: 500; }
@@ -453,18 +485,21 @@
       position: fixed;
       top: 72px;
       left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background: rgba(38, 38, 38, 0.9);
+      transform: translateX(-50%) translateY(-20px) scale(0.9);
+      background: rgba(15,18,30,0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       color: white;
-      padding: 10px 24px;
+      padding: 12px 24px;
       border-radius: 24px;
       font-size: 14px;
+      font-weight: 500;
       opacity: 0;
-      transition: all 0.3s;
+      transition: all 0.35s var(--spring);
       z-index: 300;
       pointer-events: none;
     }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 
     /* ============================================================
      * 空状态提示
@@ -543,20 +578,23 @@
     .msg-row.pharmacist { align-self: flex-end; align-items: flex-end; }
     .msg-bubble {
       padding: 10px 14px;
-      border-radius: 12px;
+      border-radius: 18px;
       font-size: 15px;
-      line-height: 1.5;
+      line-height: 1.55;
       word-break: break-all;
     }
     .msg-row.patient .msg-bubble {
       background: white;
       color: var(--text-primary);
-      border-bottom-left-radius: 4px;
+      border-bottom-left-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid var(--border);
     }
     .msg-row.pharmacist .msg-bubble {
-      background: var(--primary);
+      background: linear-gradient(135deg, var(--primary), var(--accent));
       color: white;
-      border-bottom-right-radius: 4px;
+      border-bottom-right-radius: 6px;
+      box-shadow: 0 2px 12px var(--primary-glow);
     }
     .msg-time { font-size: 10px; color: var(--text-tertiary); margin-top: 4px; }
     .msg-img {
